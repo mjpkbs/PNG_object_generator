@@ -295,10 +295,66 @@
         .cube-container {
             width: 250px;
             height: 250px;
-            margin: 0 auto 24px;
+            margin: 0 auto 16px;
             background: #0a0e1a;
             border-radius: 12px;
             border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .cube-legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .color-front { background: #00ffff; }
+        .color-top { background: #10b981; }
+        .color-right { background: #3b82f6; }
+        .color-left { background: #8b5cf6; }
+        .color-bottom { background: #6b7280; }
+        .color-back { background: #1e293b; }
+
+        .reset-button-container {
+            margin-bottom: 24px;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #ef4444;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
         }
 
         .angle-display {
@@ -482,10 +538,27 @@
                 renderer.setClearColor(0x0a0e1a, 1);
                 cubeRef.current.appendChild(renderer.domElement);
 
+                // Create cube with colored faces
                 const geometry = new THREE.BoxGeometry(2, 2, 2);
+                
+                // Define materials for each face with different colors
+                // Order: Right, Left, Top, Bottom, Front, Back
+                const materials = [
+                    new THREE.MeshBasicMaterial({ color: 0x3b82f6, opacity: 0.6, transparent: true }), // Right - Blue
+                    new THREE.MeshBasicMaterial({ color: 0x8b5cf6, opacity: 0.6, transparent: true }), // Left - Purple
+                    new THREE.MeshBasicMaterial({ color: 0x10b981, opacity: 0.6, transparent: true }), // Top - Green
+                    new THREE.MeshBasicMaterial({ color: 0x6b7280, opacity: 0.4, transparent: true }), // Bottom - Gray
+                    new THREE.MeshBasicMaterial({ color: 0x00ffff, opacity: 0.7, transparent: true }), // Front - Cyan (Brightest)
+                    new THREE.MeshBasicMaterial({ color: 0x1e293b, opacity: 0.5, transparent: true })  // Back - Dark
+                ];
+                
+                const cube = new THREE.Mesh(geometry, materials);
+                
+                // Add wireframe edges
                 const edges = new THREE.EdgesGeometry(geometry);
                 const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00d4ff, linewidth: 2 });
-                const cube = new THREE.LineSegments(edges, lineMaterial);
+                const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                cube.add(wireframe);
                 
                 scene.add(cube);
                 camera.position.z = 5;
@@ -702,6 +775,39 @@ Generate ONLY the object, ready for transparent background removal.`;
                                 style={{ cursor: 'grab' }}
                             />
 
+                            <div className="cube-legend">
+                                <div className="legend-item">
+                                    <div className="legend-color color-front"></div>
+                                    <span>앞면 (Front)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color color-top"></div>
+                                    <span>위 (Top)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color color-right"></div>
+                                    <span>우측 (Right)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color color-left"></div>
+                                    <span>좌측 (Left)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color color-bottom"></div>
+                                    <span>아래 (Bottom)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color color-back"></div>
+                                    <span>뒤 (Back)</span>
+                                </div>
+                            </div>
+
+                            <div className="reset-button-container">
+                                <button className="btn-reset" onClick={resetAngle}>
+                                    🔄 큐브 각도 리셋
+                                </button>
+                            </div>
+
                             <div className="angle-display">
                                 <div className="angle-value">
                                     <div className="angle-label">X Rotation</div>
@@ -742,16 +848,14 @@ Generate ONLY the object, ready for transparent background removal.`;
                                 />
                             </div>
 
-                            <div className="button-group">
+                            <div className="form-group">
                                 <button 
                                     className="btn-primary" 
                                     onClick={handleGenerate}
                                     disabled={loading || !objectName || !apiKey}
+                                    style={{ width: '100%' }}
                                 >
                                     {loading ? '생성 중...' : '🎨 이미지 생성'}
-                                </button>
-                                <button className="btn-secondary" onClick={resetAngle}>
-                                    🔄 각도 리셋
                                 </button>
                             </div>
 
