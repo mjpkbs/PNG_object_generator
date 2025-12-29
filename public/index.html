@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelSquid 3D 오브젝트 생성기 - Replicate</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e2842 0%, #141b2e 100%);
+            border-radius: 24px;
+            padding: 32px 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 40px;
+        }
+
+        .header-left {
+            flex: 0 0 auto;
+        }
+
+        .header-right {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 700px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00ffff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 400px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            margin-left: 16px;
+            font-size: 16px;
+            padding: 4px 12px;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 8px;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .api-key-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .api-key-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0a0e1a;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+        }
+
+        .api-key-hint {
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .api-key-hint a {
+            color: #00ffff;
+            text-decoration: none;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .panel {
+            background: rgba(30, 40, 66, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #00ffff, #00d4ff);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0a0e1a;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+        }
+
+        /* Resolution selector styles */
+        .resolution-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .resolution-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            background: #0a0e1a;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .resolution-btn:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            color: #ffffff;
+        }
+
+        .resolution-btn.active {
+            background: linear-gradient(135deg, #00ffff, #00d4ff);
+            border-color: #00d4ff;
+            color: #0a0e1a;
+        }
+
+        .resolution-label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .resolution-details {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary, .btn-secondary {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00ffff, #00d4ff);
+            color: #0a0e1a;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00ffff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+
+        .cube-container {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 24px;
+            background: #0a0e1a;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .angle-display {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #0a0e1a;
+            border-radius: 8px;
+        }
+
+        .angle-value {
+            text-align: center;
+        }
+
+        .angle-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .angle-number {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00ffff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .camera-description {
+            text-align: center;
+            font-size: 14px;
+            color: #00ffff;
+            margin-bottom: 24px;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .result-panel {
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0e1a;
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .transparency-badge {
+            margin-top: 16px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .transparency-badge.yes {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+        }
+
+        .transparency-badge.no {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fbbf24;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 212, 255, 0.2);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 8px;
+            color: #ef4444;
+        }
+
+        .warning-message {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            border-radius: 8px;
+            color: #fbbf24;
+            font-size: 13px;
+        }
+
+        .info-box {
+            padding: 16px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function PixelSquidGenerator() {
+            const [apiKey, setApiKey] = useState(localStorage.getItem('geminiApiKey') || '');
+            const [replicateApiKey, setReplicateApiKey] = useState(localStorage.getItem('replicateApiKey') || '');
+            const [objectName, setObjectName] = useState('');
+            const [rotationX, setRotationX] = useState(0);
+            const [rotationY, setRotationY] = useState(0);
+            const [loading, setLoading] = useState(false);
+            const [generatedImage, setGeneratedImage] = useState(null);
+            const [hasTransparency, setHasTransparency] = useState(false);
+            const [error, setError] = useState(null);
+            const [warning, setWarning] = useState(null);
+            const [referenceImage, setReferenceImage] = useState(null);
+            const [referencePreview, setReferencePreview] = useState(null);
+            const [resolution, setResolution] = useState('1024x1024'); // New state for resolution
+            
+            const cubeRef = useRef(null);
+            const sceneRef = useRef(null);
+            const cameraRef = useRef(null);
+            const rendererRef = useRef(null);
+            const cubeObjectRef = useRef(null);
+            const fileInputRef = useRef(null);
+
+            // Resolution options
+            const resolutionOptions = [
+                { value: '1024x1024', label: '1K', details: '1024×1024' },
+                { value: '1536x1536', label: '1.5K', details: '1536×1536' },
+                { value: '2048x2048', label: '2K', details: '2048×2048' },
+                { value: '2560x2560', label: '2.5K', details: '2560×2560' }
+            ];
+
+            // Save API keys
+            useEffect(() => {
+                if (apiKey) localStorage.setItem('geminiApiKey', apiKey);
+            }, [apiKey]);
+
+            useEffect(() => {
+                if (replicateApiKey) localStorage.setItem('replicateApiKey', replicateApiKey);
+            }, [replicateApiKey]);
+
+            // Initialize Three.js scene
+            useEffect(() => {
+                if (!cubeRef.current) return;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                
+                renderer.setSize(250, 250);
+                renderer.setClearColor(0x0a0e1a, 1);
+                cubeRef.current.appendChild(renderer.domElement);
+
+                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const edges = new THREE.EdgesGeometry(geometry);
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00d4ff, linewidth: 2 });
+                const cube = new THREE.LineSegments(edges, lineMaterial);
+                
+                scene.add(cube);
+                camera.position.z = 5;
+
+                sceneRef.current = scene;
+                cameraRef.current = camera;
+                rendererRef.current = renderer;
+                cubeObjectRef.current = cube;
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    cube.rotation.x = rotationX;
+                    cube.rotation.y = rotationY;
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                return () => {
+                    renderer.dispose();
+                    cubeRef.current?.removeChild(renderer.domElement);
+                };
+            }, []);
+
+            // Update cube rotation
+            useEffect(() => {
+                if (cubeObjectRef.current) {
+                    cubeObjectRef.current.rotation.x = rotationX;
+                    cubeObjectRef.current.rotation.y = rotationY;
+                }
+            }, [rotationX, rotationY]);
+
+            const getCameraAngle = () => {
+                const xDeg = Math.round((rotationX * 180 / Math.PI) % 360);
+                const yDeg = Math.round((rotationY * 180 / Math.PI) % 360);
+                
+                if (Math.abs(xDeg) < 20 && Math.abs(yDeg) < 20) return "정면 (Front View)";
+                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 90) < 20) return "우측면 (Right Side)";
+                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 180) < 20) return "후면 (Back View)";
+                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 270) < 20) return "좌측면 (Left Side)";
+                if (Math.abs(xDeg - 90) < 20) return "상단 (Top View)";
+                if (Math.abs(xDeg + 90) < 20) return "하단 (Bottom View)";
+                if (xDeg > 20 && xDeg < 70 && yDeg > 20 && yDeg < 70) return "우상단 사각 (Top-Right Angle)";
+                
+                return "사각 (Angled View)";
+            };
+
+            const cameraAngle = getCameraAngle();
+
+            const handleMouseDown = (e) => {
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startRotX = rotationX;
+                const startRotY = rotationY;
+
+                const handleMouseMove = (e) => {
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+                    setRotationX(startRotX + deltaY * 0.01);
+                    setRotationY(startRotY + deltaX * 0.01);
+                };
+
+                const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                };
+
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            };
+
+            const resetAngle = () => {
+                setRotationX(0.5);
+                setRotationY(0.5);
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setReferenceImage(event.target.result);
+                    setReferencePreview(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const clearReferenceImage = () => {
+                setReferenceImage(null);
+                setReferencePreview(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            const handleGenerate = async () => {
+                if (!apiKey || !objectName) return;
+
+                setLoading(true);
+                setError(null);
+                setWarning(null);
+                setGeneratedImage(null);
+
+                const xDeg = Math.round((rotationX * 180 / Math.PI) % 360);
+                const yDeg = Math.round((rotationY * 180 / Math.PI) % 360);
+
+                const promptPrefix = referenceImage 
+                    ? `Using the reference image's style (colors, materials, lighting), create a ${resolution} professional 3D render of: `
+                    : `Create a ${resolution} professional 3D render of: `;
+
+                const prompt = `${promptPrefix}${objectName}
+
+Camera angle: X rotation ${xDeg}°, Y rotation ${yDeg}° (${cameraAngle})
+Current view angle description: ${cameraAngle}
+
+Style requirements:
+- Ultra-realistic 3D render
+- Clean, professional studio lighting
+- High detail and quality
+- Suitable for product visualization
+- ${resolution} resolution with sharp details
+- Center the object in frame with proper composition
+
+Generate ONLY the object, ready for transparent background removal.`;
+
+                try {
+                    const response = await fetch('/.netlify/functions/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey,
+                            replicateApiKey,
+                            prompt,
+                            referenceImage,
+                            resolution
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        setError(data.error.message);
+                    } else {
+                        setGeneratedImage(`data:image/png;base64,${data.image}`);
+                        setHasTransparency(data.hasTransparency);
+                        setWarning(data.warning);
+                    }
+                } catch (err) {
+                    setError(`생성 실패: ${err.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const downloadImage = () => {
+                if (!generatedImage) return;
+                const link = document.createElement('a');
+                link.href = generatedImage;
+                link.download = `${objectName}-${cameraAngle}-${resolution}.png`;
+                link.click();
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <div className="header-left">
+                            <h1>PixelSquid 3D 오브젝트 생성기
+                                <span className="success-badge">Replicate</span>
+                            </h1>
+                            <p className="subtitle">
+                                Gemini로 3D 오브젝트 생성 + Replicate로 배경 자동 제거
+                            </p>
+                        </div>
+                        <div className="header-right">
+                            <div className="api-key-group">
+                                <label className="api-key-label">Gemini API Key</label>
+                                <input
+                                    type="password"
+                                    className="api-key-input"
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    placeholder="Gemini API 키 입력"
+                                />
+                                <div className="api-key-hint">
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank">API 키 발급받기</a>
+                                </div>
+                            </div>
+                            <div className="api-key-group">
+                                <label className="api-key-label">Replicate API Key</label>
+                                <input
+                                    type="password"
+                                    className="api-key-input"
+                                    value={replicateApiKey}
+                                    onChange={(e) => setReplicateApiKey(e.target.value)}
+                                    placeholder="Replicate API 키 입력"
+                                />
+                                <div className="api-key-hint">
+                                    <a href="https://replicate.com/account/api-tokens" target="_blank">API 키 발급받기</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="content">
+                        {/* Left Panel */}
+                        <div className="panel">
+                            <h2 className="panel-title">이미지 설정</h2>
+                            
+                            <div 
+                                ref={cubeRef} 
+                                className="cube-container"
+                                onMouseDown={handleMouseDown}
+                                style={{ cursor: 'grab' }}
+                            />
+
+                            <div className="angle-display">
+                                <div className="angle-value">
+                                    <div className="angle-label">X Rotation</div>
+                                    <div className="angle-number">{Math.round((rotationX * 180 / Math.PI) % 360)}°</div>
+                                </div>
+                                <div className="angle-value">
+                                    <div className="angle-label">Y Rotation</div>
+                                    <div className="angle-number">{Math.round((rotationY * 180 / Math.PI) % 360)}°</div>
+                                </div>
+                            </div>
+
+                            <div className="camera-description">📷 {cameraAngle}</div>
+
+                            <div className="form-group">
+                                <label>📐 이미지 해상도</label>
+                                <div className="resolution-group">
+                                    {resolutionOptions.map(option => (
+                                        <button
+                                            key={option.value}
+                                            className={`resolution-btn ${resolution === option.value ? 'active' : ''}`}
+                                            onClick={() => setResolution(option.value)}
+                                        >
+                                            <div className="resolution-label">{option.label}</div>
+                                            <div className="resolution-details">{option.details}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="objectInput">🎯 오브젝트 이름 (한글/영어)</label>
+                                <input 
+                                    type="text" 
+                                    id="objectInput"
+                                    value={objectName}
+                                    onChange={(e) => setObjectName(e.target.value)}
+                                    placeholder="예: 커피잔, coffee mug, 노트북, laptop"
+                                />
+                            </div>
+
+                            <div className="button-group">
+                                <button 
+                                    className="btn-primary" 
+                                    onClick={handleGenerate}
+                                    disabled={loading || !objectName || !apiKey}
+                                >
+                                    {loading ? '생성 중...' : '🎨 이미지 생성'}
+                                </button>
+                                <button className="btn-secondary" onClick={resetAngle}>
+                                    🔄 각도 리셋
+                                </button>
+                            </div>
+
+                            <div className="form-group" style={{ marginTop: '32px' }}>
+                                <label>🖼️ 참조 이미지 (선택사항)</label>
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleFileUpload}
+                                    style={{ display: 'none' }}
+                                />
+                                {!referencePreview ? (
+                                    <div 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        style={{
+                                            padding: '24px',
+                                            background: '#0a0e1a',
+                                            border: '2px dashed rgba(0, 212, 255, 0.3)',
+                                            borderRadius: '8px',
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = '#00d4ff';
+                                            e.currentTarget.style.background = 'rgba(0, 212, 255, 0.05)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = 'rgba(0, 212, 255, 0.3)';
+                                            e.currentTarget.style.background = '#0a0e1a';
+                                        }}
+                                    >
+                                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📁</div>
+                                        <div style={{ fontSize: '14px', color: '#94a3b8' }}>클릭하여 참조 이미지 업로드</div>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>스타일 참고용</div>
+                                    </div>
+                                ) : (
+                                    <div style={{ position: 'relative' }}>
+                                        <div style={{
+                                            width: '100%',
+                                            height: '200px',
+                                            background: '#0a0e1a',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(0, 212, 255, 0.3)',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <img 
+                                                src={referencePreview} 
+                                                alt="Reference"
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'contain'
+                                                }}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={clearReferenceImage}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '8px',
+                                                right: '8px',
+                                                padding: '8px 16px',
+                                                background: 'rgba(239, 68, 68, 0.8)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px',
+                                                fontWeight: '600'
+                                            }}
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                )}
+                                {referencePreview && (
+                                    <div className="info-box" style={{ marginTop: '12px' }}>
+                                        <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                                            <strong>💡 참조 이미지 사용 방법</strong>
+                                        </div>
+                                        <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                                            • 참조 이미지는 <strong style={{ color: '#00ffff' }}>스타일만</strong> 참고합니다 (색상, 질감, 재질)<br/>
+                                            • 카메라 각도는 <strong style={{ color: '#00ffff' }}>위 큐브로 제어</strong>됩니다<br/>
+                                            • 현재 각도: <strong style={{ color: '#10b981' }}>{cameraAngle}</strong>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Panel */}
+                        <div className="panel">
+                            <h2 className="panel-title">생성 결과</h2>
+                            
+                            <div className="result-panel">
+                                {loading && (
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div className="loading-spinner"></div>
+                                        <p style={{ color: '#94a3b8' }}>AI가 이미지를 생성하고 배경을 제거하고 있습니다...</p>
+                                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>해상도: {resolution} (약 15-60초 소요)</p>
+                                    </div>
+                                )}
+
+                                {error && !loading && (
+                                    <div className="error-message">
+                                        ❌ {error}
+                                    </div>
+                                )}
+
+                                {generatedImage && !loading && (
+                                    <div style={{ width: '100%', textAlign: 'center' }}>
+                                        <img 
+                                            src={generatedImage} 
+                                            alt="Generated" 
+                                            className="result-image"
+                                        />
+                                        <div className={`transparency-badge ${hasTransparency ? 'yes' : 'no'}`}>
+                                            {hasTransparency ? '✅ 투명 배경 적용됨' : '⚠️ 배경 제거 대기 중'}
+                                        </div>
+                                        {warning && (
+                                            <div className="warning-message">
+                                                💡 {warning}
+                                            </div>
+                                        )}
+                                        <button 
+                                            className="btn-primary" 
+                                            onClick={downloadImage}
+                                            style={{ marginTop: '20px', width: '100%' }}
+                                        >
+                                            💾 PNG 다운로드 ({resolution})
+                                        </button>
+                                    </div>
+                                )}
+
+                                {!loading && !error && !generatedImage && (
+                                    <div style={{ textAlign: 'center', color: '#64748b' }}>
+                                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎨</div>
+                                        <p>왼쪽에서 각도와 해상도를 선택하고<br/>오브젝트 이름을 입력한 후<br/>생성 버튼을 눌러주세요</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<PixelSquidGenerator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
