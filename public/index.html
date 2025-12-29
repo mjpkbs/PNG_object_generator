@@ -427,8 +427,8 @@
             const [apiKey, setApiKey] = useState(localStorage.getItem('geminiApiKey') || '');
             const [replicateApiKey, setReplicateApiKey] = useState(localStorage.getItem('replicateApiKey') || '');
             const [objectName, setObjectName] = useState('');
-            const [rotationX, setRotationX] = useState(0);
-            const [rotationY, setRotationY] = useState(0);
+            const [rotationX, setRotationX] = useState(0.5);
+            const [rotationY, setRotationY] = useState(0.5);
             const [loading, setLoading] = useState(false);
             const [generatedImage, setGeneratedImage] = useState(null);
             const [hasTransparency, setHasTransparency] = useState(false);
@@ -444,6 +444,8 @@
             const rendererRef = useRef(null);
             const cubeObjectRef = useRef(null);
             const fileInputRef = useRef(null);
+            const rotationXRef = useRef(0.5);
+            const rotationYRef = useRef(0.5);
 
             // Resolution options
             const resolutionOptions = [
@@ -461,6 +463,12 @@
             useEffect(() => {
                 if (replicateApiKey) localStorage.setItem('replicateApiKey', replicateApiKey);
             }, [replicateApiKey]);
+
+            // Update rotation refs
+            useEffect(() => {
+                rotationXRef.current = rotationX;
+                rotationYRef.current = rotationY;
+            }, [rotationX, rotationY]);
 
             // Initialize Three.js scene
             useEffect(() => {
@@ -489,8 +497,9 @@
 
                 const animate = () => {
                     requestAnimationFrame(animate);
-                    cube.rotation.x = rotationX;
-                    cube.rotation.y = rotationY;
+                    // Use refs to get current rotation values
+                    cube.rotation.x = rotationXRef.current;
+                    cube.rotation.y = rotationYRef.current;
                     renderer.render(scene, camera);
                 };
                 animate();
@@ -501,7 +510,7 @@
                 };
             }, []);
 
-            // Update cube rotation
+            // Update cube rotation (backup method)
             useEffect(() => {
                 if (cubeObjectRef.current) {
                     cubeObjectRef.current.rotation.x = rotationX;
