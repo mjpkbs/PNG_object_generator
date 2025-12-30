@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelSquid 3D 오브젝트 생성기 - Replicate</title>
+    <title>PixelSquid 3D 오브젝트 생성기 - Flux AI</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -480,7 +480,6 @@
         const { useState, useEffect, useRef } = React;
 
         function PixelSquidGenerator() {
-            const [apiKey, setApiKey] = useState(localStorage.getItem('geminiApiKey') || '');
             const [replicateApiKey, setReplicateApiKey] = useState(localStorage.getItem('replicateApiKey') || '');
             const [objectName, setObjectName] = useState('');
             const [rotationX, setRotationX] = useState(0.5);
@@ -490,16 +489,13 @@
             const [hasTransparency, setHasTransparency] = useState(false);
             const [error, setError] = useState(null);
             const [warning, setWarning] = useState(null);
-            const [referenceImage, setReferenceImage] = useState(null);
-            const [referencePreview, setReferencePreview] = useState(null);
-            const [resolution, setResolution] = useState('1024x1024'); // New state for resolution
+            const [resolution, setResolution] = useState('1024x1024');
             
             const cubeRef = useRef(null);
             const sceneRef = useRef(null);
             const cameraRef = useRef(null);
             const rendererRef = useRef(null);
             const cubeObjectRef = useRef(null);
-            const fileInputRef = useRef(null);
             const rotationXRef = useRef(0.5);
             const rotationYRef = useRef(0.5);
 
@@ -511,11 +507,7 @@
                 { value: '2560x2560', label: '2.5K', details: '2560×2560' }
             ];
 
-            // Save API keys
-            useEffect(() => {
-                if (apiKey) localStorage.setItem('geminiApiKey', apiKey);
-            }, [apiKey]);
-
+            // Save API key
             useEffect(() => {
                 if (replicateApiKey) localStorage.setItem('replicateApiKey', replicateApiKey);
             }, [replicateApiKey]);
@@ -635,28 +627,8 @@
                 setRotationY(0.5);
             };
 
-            const handleFileUpload = (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    setReferenceImage(event.target.result);
-                    setReferencePreview(event.target.result);
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const clearReferenceImage = () => {
-                setReferenceImage(null);
-                setReferencePreview(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            };
-
             const handleGenerate = async () => {
-                if (!apiKey || !objectName) return;
+                if (!replicateApiKey || !objectName) return;
 
                 setLoading(true);
                 setError(null);
@@ -666,24 +638,10 @@
                 const xDeg = Math.round((rotationX * 180 / Math.PI) % 360);
                 const yDeg = Math.round((rotationY * 180 / Math.PI) % 360);
 
-                const promptPrefix = referenceImage 
-                    ? `Using the reference image's style (colors, materials, lighting), create a ${resolution} professional 3D render of: `
-                    : `Create a ${resolution} professional 3D render of: `;
-
-                const prompt = `${promptPrefix}${objectName}
-
-Camera angle: X rotation ${xDeg}°, Y rotation ${yDeg}° (${cameraAngle})
-Current view angle description: ${cameraAngle}
-
-Style requirements:
-- Ultra-realistic 3D render
-- Clean, professional studio lighting
-- High detail and quality
-- Suitable for product visualization
-- ${resolution} resolution with sharp details
-- Center the object in frame with proper composition
-
-Generate ONLY the object, ready for transparent background removal.`;
+                const prompt = `Professional 3D render of a ${objectName}, ${resolution} resolution.
+Camera angle: X rotation ${xDeg}°, Y rotation ${yDeg}° (${cameraAngle}).
+Style: Ultra-realistic 3D render with clean professional studio lighting, high detail and quality, suitable for product visualization.
+Center the object in frame with proper composition. Clean white or neutral background.`;
 
                 try {
                     const response = await fetch('/api/generate', {
@@ -725,27 +683,14 @@ Generate ONLY the object, ready for transparent background removal.`;
                     <div className="header">
                         <div className="header-left">
                             <h1>PixelSquid 3D 오브젝트 생성기
-                                <span className="success-badge">Replicate</span>
+                                <span className="success-badge">Flux AI</span>
                             </h1>
                             <p className="subtitle">
-                                Gemini로 3D 오브젝트 생성 + Replicate로 배경 자동 제거
+                                Flux AI로 고품질 3D 오브젝트 생성 + 자동 배경 제거
                             </p>
                         </div>
                         <div className="header-right">
-                            <div className="api-key-group">
-                                <label className="api-key-label">Gemini API Key</label>
-                                <input
-                                    type="password"
-                                    className="api-key-input"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder="Gemini API 키 입력"
-                                />
-                                <div className="api-key-hint">
-                                    <a href="https://aistudio.google.com/app/apikey" target="_blank">API 키 발급받기</a>
-                                </div>
-                            </div>
-                            <div className="api-key-group">
+                            <div className="api-key-group" style={{gridColumn: '1 / -1'}}>
                                 <label className="api-key-label">Replicate API Key</label>
                                 <input
                                     type="password"
@@ -857,93 +802,6 @@ Generate ONLY the object, ready for transparent background removal.`;
                                 </button>
                             </div>
 
-                            <div className="form-group" style={{ marginTop: '32px' }}>
-                                <label>🖼️ 참조 이미지 (선택사항)</label>
-                                <input 
-                                    ref={fileInputRef}
-                                    type="file" 
-                                    accept="image/*"
-                                    onChange={handleFileUpload}
-                                    style={{ display: 'none' }}
-                                />
-                                {!referencePreview ? (
-                                    <div 
-                                        onClick={() => fileInputRef.current?.click()}
-                                        style={{
-                                            padding: '24px',
-                                            background: '#0a0e1a',
-                                            border: '2px dashed rgba(0, 212, 255, 0.3)',
-                                            borderRadius: '8px',
-                                            textAlign: 'center',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.borderColor = '#00d4ff';
-                                            e.currentTarget.style.background = 'rgba(0, 212, 255, 0.05)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.borderColor = 'rgba(0, 212, 255, 0.3)';
-                                            e.currentTarget.style.background = '#0a0e1a';
-                                        }}
-                                    >
-                                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📁</div>
-                                        <div style={{ fontSize: '14px', color: '#94a3b8' }}>클릭하여 참조 이미지 업로드</div>
-                                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>스타일 참고용</div>
-                                    </div>
-                                ) : (
-                                    <div style={{ position: 'relative' }}>
-                                        <div style={{
-                                            width: '100%',
-                                            height: '200px',
-                                            background: '#0a0e1a',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(0, 212, 255, 0.3)',
-                                            overflow: 'hidden'
-                                        }}>
-                                            <img 
-                                                src={referencePreview} 
-                                                alt="Reference"
-                                                style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'contain'
-                                                }}
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={clearReferenceImage}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                padding: '8px 16px',
-                                                background: 'rgba(239, 68, 68, 0.8)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px',
-                                                fontWeight: '600'
-                                            }}
-                                        >
-                                            삭제
-                                        </button>
-                                    </div>
-                                )}
-                                {referencePreview && (
-                                    <div className="info-box" style={{ marginTop: '12px' }}>
-                                        <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-                                            <strong>💡 참조 이미지 사용 방법</strong>
-                                        </div>
-                                        <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                                            • 참조 이미지는 <strong style={{ color: '#00ffff' }}>스타일만</strong> 참고합니다 (색상, 질감, 재질)<br/>
-                                            • 카메라 각도는 <strong style={{ color: '#00ffff' }}>위 큐브로 제어</strong>됩니다<br/>
-                                            • 현재 각도: <strong style={{ color: '#10b981' }}>{cameraAngle}</strong>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
                         </div>
 
                         {/* Right Panel */}
