@@ -690,10 +690,8 @@ Generate ONLY the object, ready for transparent background removal.`;
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            apiKey,
                             replicateApiKey,
                             prompt,
-                            referenceImage,
                             resolution
                         })
                     });
@@ -852,7 +850,7 @@ Generate ONLY the object, ready for transparent background removal.`;
                                 <button 
                                     className="btn-primary" 
                                     onClick={handleGenerate}
-                                    disabled={loading || !objectName || !apiKey}
+                                    disabled={loading || !objectName || !replicateApiKey}
                                     style={{ width: '100%' }}
                                 >
                                     {loading ? '생성 중...' : '🎨 이미지 생성'}
