@@ -41,14 +41,11 @@ class handler(BaseHTTPRequestHandler):
             print(f"Prompt: {prompt[:100]}...")
             print(f"Resolution: {resolution}")
             
-            # Parse resolution
-            width, height = map(int, resolution.split('x'))
-            
             # Configure Gemini
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-2.0-flash-exp')
             
-            # Set up generation config
+            # Set up generation config (without response_modalities)
             generation_config = {
                 "temperature": 0.4,
                 "top_p": 0.95,
@@ -81,21 +78,11 @@ class handler(BaseHTTPRequestHandler):
                 if hasattr(candidate.content, 'parts'):
                     for part in candidate.content.parts:
                         if hasattr(part, 'inline_data'):
+                            # inline_data.data is already base64 string
                             generated_image_data = part.inline_data.data
                             print("✅ Gemini 이미지 생성 완료!")
                             
-                            # Decode and resize
-                            img_bytes = base64.b64decode(generated_image_data)
-                            img = Image.open(io.BytesIO(img_bytes))
-                            
-                            if img.size != (width, height):
-                                print(f"🔄 이미지 크기 조정: {img.size} -> {width}x{height}")
-                                img = img.resize((width, height), Image.LANCZOS)
-                                buffer = io.BytesIO()
-                                img.save(buffer, format='PNG')
-                                generated_image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                            
-                            # Save to temp file for Replicate
+                            # Remove background with Replicate if API key provided
                             has_transparency = False
                             warning = None
                             
@@ -103,6 +90,7 @@ class handler(BaseHTTPRequestHandler):
                                 try:
                                     print("🔄 Replicate로 배경 제거 시작...")
                                     
+                                    # Save to temp file for Replicate
                                     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp_file:
                                         tmp_file.write(base64.b64decode(generated_image_data))
                                         tmp_filename = tmp_file.name
@@ -149,7 +137,7 @@ class handler(BaseHTTPRequestHandler):
                                 print("⚠️ Replicate API 키가 없어 배경 제거를 건너뜁니다")
                                 warning = "Replicate API 키가 없어 배경 제거를 건너뛰었습니다."
                             
-                            # Return original image
+                            # Return original image (already base64 string from Gemini)
                             self.send_response(200)
                             self.send_header('Content-Type', 'application/json')
                             self.send_header('Access-Control-Allow-Origin', '*')
