@@ -54,7 +54,6 @@ class handler(BaseHTTPRequestHandler):
                 "top_p": 0.95,
                 "top_k": 40,
                 "max_output_tokens": 8192,
-                "response_modalities": ["image"],
             }
             
             # Add prompt with resolution specification
