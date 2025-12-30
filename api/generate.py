@@ -79,7 +79,7 @@ class handler(BaseHTTPRequestHandler):
                     for part in candidate.content.parts:
                         if hasattr(part, 'inline_data'):
                             # inline_data.data is already base64 string
-                            generated_image_data = part.inline_data.data
+                            generated_image_data = base64.b64encode(part.inline_data.data).decode('utf-8')
                             print("✅ Gemini 이미지 생성 완료!")
                             
                             # Remove background with Replicate if API key provided
