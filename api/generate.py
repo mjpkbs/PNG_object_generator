@@ -95,8 +95,12 @@ class handler(BaseHTTPRequestHandler):
                 
                 print(f"📡 배경 제거 출력: {bg_output}")
                 
+                # Convert FileOutput to URL string
+                bg_url = str(bg_output)
+                print(f"🔗 배경 제거 URL: {bg_url}")
+                
                 # Download result
-                with urllib.request.urlopen(bg_output) as response_data:
+                with urllib.request.urlopen(bg_url) as response_data:
                     result_image_data = base64.b64encode(response_data.read()).decode('utf-8')
                 
                 os.unlink(tmp_filename)
