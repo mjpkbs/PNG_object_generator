@@ -550,28 +550,21 @@
             ];
 
             // Auto-select model based on resolution
+            // FLUX Schnell is default (can upscale to 2K)
+            // Users can manually switch to SDXL (1K only) or FLUX Pro Ultra (native 2K)
             useEffect(() => {
-                const [currentWidth] = resolution.split('x').map(Number);
-                
-                if (currentWidth <= 1024) {
-                    // For 1K, use SDXL (stable and reliable)
-                    if (model !== 'sdxl') {
-                        setModel('sdxl');
-                        console.log('Auto-selected SDXL for 1K resolution');
-                    }
-                } else {
-                    // For >1K, use FLUX Pro Ultra (TRUE 2K-4MP support)
-                    if (model === 'sdxl') {
-                        setModel('flux-pro-ultra');
-                        console.log(`Auto-selected FLUX Pro Ultra for ${resolution} resolution`);
-                    }
+                // Only auto-select on first load, don't override manual selection
+                if (!model) {
+                    setModel('flux-schnell');
+                    console.log('Default model: FLUX Schnell');
                 }
-            }, [resolution]);
+            }, []);
 
-            // Model options - TRUE 2K support!
+            // Model options - 3 models with upscaling!
             const modelOptions = [
+                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 자동 업스케일', cost: '$', maxRes: '2048x2048', canUpscale: true },
                 { value: 'sdxl', label: 'SDXL', details: '1K, 안정적', cost: '$', maxRes: '1024x1024', for1K: true },
-                { value: 'flux-pro-ultra', label: 'FLUX Pro Ultra', details: '최대 4MP, 최고품질', cost: '$$$', maxRes: '2048x2048', for2K: true }
+                { value: 'flux-pro-ultra', label: 'FLUX Pro Ultra', details: '네이티브 2K, 최고품질', cost: '$$$', maxRes: '2048x2048', for2K: true }
             ];
 
             // Save API key
@@ -993,14 +986,25 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 <div className="resolution-group">
                                     {resolutionOptions.map(option => {
                                         const [optionWidth] = option.value.split('x').map(Number);
-                                        const willUseModel = optionWidth <= 1024 ? 'SDXL' : 'FLUX Pro Ultra';
+                                        let tooltipText = option.details;
+                                        if (model === 'flux-schnell' && optionWidth > 1024) {
+                                            tooltipText += ' (1K 생성 + 업스케일)';
+                                        } else if (model === 'sdxl' && optionWidth > 1024) {
+                                            tooltipText += ' (SDXL은 1K만 지원)';
+                                        } else if (model === 'flux-pro-ultra') {
+                                            tooltipText += ' (네이티브 생성)';
+                                        }
+                                        
+                                        // Disable >1K for SDXL
+                                        const isDisabled = model === 'sdxl' && optionWidth > 1024;
                                         
                                         return (
                                             <button
                                                 key={option.value}
-                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''}`}
-                                                onClick={() => setResolution(option.value)}
-                                                title={`${option.details} → ${willUseModel} 사용`}
+                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                                onClick={() => !isDisabled && setResolution(option.value)}
+                                                disabled={isDisabled}
+                                                title={tooltipText}
                                             >
                                                 <div className="resolution-label">{option.label}</div>
                                                 <div className="resolution-details">{option.details}</div>
@@ -1031,12 +1035,13 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     ))}
                                 </div>
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
-                                    <strong>💡 자동 모델 선택:</strong><br/>
-                                    • <strong>1K</strong> → SDXL (안정적, 10-20초)<br/>
-                                    • <strong>1.5K/2K</strong> → FLUX Pro Ultra (진짜 2K, 최고 품질)<br/>
+                                    <strong>💡 모델 선택 가이드:</strong><br/>
+                                    • <strong>FLUX Schnell</strong>: 빠름, 1K 생성 + AI 업스케일로 2K 가능 (기본값)<br/>
+                                    • <strong>SDXL</strong>: 안정적, 1K 전용<br/>
+                                    • <strong>FLUX Pro Ultra</strong>: 네이티브 2K, 최고 품질<br/>
                                     <br/>
-                                    해상도를 선택하면 자동으로 최적의 모델이 선택됩니다!<br/>
-                                    FLUX Pro Ultra는 최대 4MP까지 생성 가능합니다.
+                                    <strong>📈 자동 업스케일:</strong><br/>
+                                    FLUX Schnell로 2K 선택 시 Real-ESRGAN으로 자동 업스케일됩니다!
                                 </div>
                             </div>
 
@@ -1051,11 +1056,16 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     <div style={{ textAlign: 'center' }}>
                                         <div className="loading-spinner"></div>
                                         <p style={{ color: '#94a3b8' }}>
+                                            {model === 'flux-schnell' && resolution === '1024x1024' && 'FLUX Schnell로 빠르게 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'flux-schnell' && resolution !== '1024x1024' && `FLUX Schnell로 1K 이미지 생성 → ${resolution}로 업스케일 → 배경 제거 중...`}
                                             {model === 'sdxl' && 'Stable Diffusion XL로 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                             {model === 'flux-pro-ultra' && 'FLUX Pro Ultra로 최고급 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                         </p>
                                         <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                                            해상도: {resolution} ({model === 'sdxl' ? '약 10-20초' : '약 20-40초'} 소요)
+                                            {model === 'flux-schnell' && resolution === '1024x1024' && '약 5-15초 소요'}
+                                            {model === 'flux-schnell' && resolution !== '1024x1024' && `생성 5-10초 + 업스케일 10-15초 = 약 15-25초`}
+                                            {model === 'sdxl' && '약 10-20초 소요'}
+                                            {model === 'flux-pro-ultra' && '약 20-40초 소요'}
                                         </p>
                                     </div>
                                 )}

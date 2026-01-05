@@ -57,7 +57,43 @@ class handler(BaseHTTPRequestHandler):
             
             # Generate image based on selected model
             try:
-                if model_choice == 'sdxl':
+                if model_choice == 'flux-schnell':
+                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024)...")
+                    output = replicate.run(
+                        "black-forest-labs/flux-schnell",
+                        input={
+                            "prompt": prompt,
+                            "output_format": "png",
+                            "output_quality": 100,
+                            "aspect_ratio": "1:1"
+                        }
+                    )
+                    
+                    # If resolution > 1K, upscale before background removal
+                    if width > 1024 or height > 1024:
+                        print(f"📈 Real-ESRGAN으로 {width}x{height}로 업스케일 중...")
+                        # Calculate scale factor
+                        scale_factor = max(width / 1024, height / 1024)
+                        if scale_factor <= 2:
+                            scale = 2
+                        elif scale_factor <= 4:
+                            scale = 4
+                        else:
+                            scale = 4  # Max scale
+                        
+                        # Upscale with Real-ESRGAN
+                        upscale_output = replicate.run(
+                            "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+                            input={
+                                "image": output,
+                                "scale": scale,
+                                "face_enhance": False
+                            }
+                        )
+                        output = upscale_output
+                        print(f"✅ 업스케일 완료!")
+                    
+                elif model_choice == 'sdxl':
                     print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
                     output = replicate.run(
                         "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
