@@ -69,7 +69,10 @@ class handler(BaseHTTPRequestHandler):
                         }
                     )
                     
-                    # Extract URL from FileOutput if needed
+                    # Extract URL from FileOutput (handle list or single object)
+                    if isinstance(output, list):
+                        output = output[0] if len(output) > 0 else output
+                    
                     if hasattr(output, 'url'):
                         image_url = output.url
                     elif isinstance(output, str):
@@ -91,15 +94,17 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN (lucataco - faster!)
+                        # Upscale with Real-ESRGAN (lucataco)
                         upscale_output = replicate.run(
-                            "lucataco/real-esrgan:dda8245c8f02f0a0ac20646c874d96f041028b60a0329a0cf4241a01c8bc098e",
+                            "lucataco/real-esrgan",  # Use latest version
                             input={
                                 "image": image_url,
                                 "scale": scale
                             }
                         )
                         # Update output to upscaled result
+                        if isinstance(upscale_output, list):
+                            upscale_output = upscale_output[0] if len(upscale_output) > 0 else upscale_output
                         if hasattr(upscale_output, 'url'):
                             output = upscale_output.url
                         elif isinstance(upscale_output, str):
@@ -122,7 +127,10 @@ class handler(BaseHTTPRequestHandler):
                         }
                     )
                     
-                    # Extract URL from output
+                    # Extract URL from output (handle list or single object)
+                    if isinstance(output, list):
+                        output = output[0] if len(output) > 0 else output
+                    
                     if hasattr(output, 'url'):
                         image_url = output.url
                     elif isinstance(output, str):
@@ -144,15 +152,17 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN (lucataco - faster!)
+                        # Upscale with Real-ESRGAN (lucataco)
                         upscale_output = replicate.run(
-                            "lucataco/real-esrgan:dda8245c8f02f0a0ac20646c874d96f041028b60a0329a0cf4241a01c8bc098e",
+                            "lucataco/real-esrgan",  # Use latest version
                             input={
                                 "image": image_url,
                                 "scale": scale
                             }
                         )
                         # Update output to upscaled result
+                        if isinstance(upscale_output, list):
+                            upscale_output = upscale_output[0] if len(upscale_output) > 0 else upscale_output
                         if hasattr(upscale_output, 'url'):
                             output = upscale_output.url
                         elif isinstance(upscale_output, str):
