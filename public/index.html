@@ -357,6 +357,36 @@
             border-color: #ef4444;
         }
 
+        .preset-angles-container {
+            margin-bottom: 24px;
+        }
+
+        .preset-angles-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .preset-angle-btn {
+            padding: 10px 8px;
+            background: #0a0e1a;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .preset-angle-btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
         .angle-display {
             display: flex;
             justify-content: space-around;
@@ -587,18 +617,64 @@
                 const xDeg = Math.round((rotationX * 180 / Math.PI) % 360);
                 const yDeg = Math.round((rotationY * 180 / Math.PI) % 360);
                 
-                if (Math.abs(xDeg) < 20 && Math.abs(yDeg) < 20) return "정면 (Front View)";
-                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 90) < 20) return "우측면 (Right Side)";
-                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 180) < 20) return "후면 (Back View)";
-                if (Math.abs(xDeg) < 20 && Math.abs(yDeg - 270) < 20) return "좌측면 (Left Side)";
-                if (Math.abs(xDeg - 90) < 20) return "상단 (Top View)";
-                if (Math.abs(xDeg + 90) < 20) return "하단 (Bottom View)";
-                if (xDeg > 20 && xDeg < 70 && yDeg > 20 && yDeg < 70) return "우상단 사각 (Top-Right Angle)";
+                // Normalize angles to 0-360
+                const normalizedX = ((xDeg % 360) + 360) % 360;
+                const normalizedY = ((yDeg % 360) + 360) % 360;
                 
-                return "사각 (Angled View)";
+                // Front view (looking straight at front)
+                if (normalizedX < 30 && normalizedY < 30) 
+                    return { display: "정면 (Front)", prompt: "straight front view, facing camera directly" };
+                
+                // Right side view
+                if (normalizedX < 30 && normalizedY > 60 && normalizedY < 120) 
+                    return { display: "우측면 (Right)", prompt: "right side view, 90 degrees from front" };
+                
+                // Back view
+                if (normalizedX < 30 && normalizedY > 150 && normalizedY < 210) 
+                    return { display: "후면 (Back)", prompt: "back view, rear facing" };
+                
+                // Left side view
+                if (normalizedX < 30 && (normalizedY > 240 && normalizedY < 300)) 
+                    return { display: "좌측면 (Left)", prompt: "left side view, 90 degrees from front" };
+                
+                // Top view (bird's eye)
+                if (normalizedX > 60 && normalizedX < 120) 
+                    return { display: "상단 (Top)", prompt: "top view, bird's eye view from directly above" };
+                
+                // Bottom view
+                if (normalizedX > 240 && normalizedX < 300) 
+                    return { display: "하단 (Bottom)", prompt: "bottom view, looking up from below" };
+                
+                // Three-quarter views (most common for product renders)
+                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 20 && normalizedY < 60) 
+                    return { display: "우상단 3/4 (Top-Right 3/4)", prompt: "three-quarter view from top right, elevated 30 degrees, rotated 45 degrees" };
+                
+                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 300 && normalizedY < 340) 
+                    return { display: "좌상단 3/4 (Top-Left 3/4)", prompt: "three-quarter view from top left, elevated 30 degrees, rotated 45 degrees" };
+                
+                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 150 && normalizedY < 210) 
+                    return { display: "후상단 3/4 (Back 3/4)", prompt: "three-quarter back view from above, elevated 30 degrees" };
+                
+                // Isometric-style views
+                if (normalizedX > 30 && normalizedX < 60) {
+                    if (normalizedY > 30 && normalizedY < 90)
+                        return { display: "아이소메트릭 우측 (Isometric Right)", prompt: "isometric view from the right, 35-degree angle" };
+                    if (normalizedY > 270 && normalizedY < 330)
+                        return { display: "아이소메트릭 좌측 (Isometric Left)", prompt: "isometric view from the left, 35-degree angle" };
+                }
+                
+                // General angled view
+                const angle = normalizedX > 45 ? "high angle" : "eye level";
+                const rotation = normalizedY < 90 ? "slightly rotated right" : normalizedY < 180 ? "rotated" : normalizedY < 270 ? "slightly rotated left" : "facing forward";
+                
+                return { 
+                    display: "각진 뷰 (Angled)", 
+                    prompt: `${angle} view, ${rotation}, professional product photography angle` 
+                };
             };
 
-            const cameraAngle = getCameraAngle();
+            const cameraAngleData = getCameraAngle();
+            const cameraAngle = cameraAngleData.display;
 
             const handleMouseDown = (e) => {
                 const startX = e.clientX;
@@ -627,6 +703,11 @@
                 setRotationY(0.5);
             };
 
+            const setPresetAngle = (x, y) => {
+                setRotationX(x);
+                setRotationY(y);
+            };
+
             const handleGenerate = async () => {
                 if (!replicateApiKey || !objectName) return;
 
@@ -635,13 +716,13 @@
                 setWarning(null);
                 setGeneratedImage(null);
 
-                const xDeg = Math.round((rotationX * 180 / Math.PI) % 360);
-                const yDeg = Math.round((rotationY * 180 / Math.PI) % 360);
+                const cameraDesc = cameraAngleData.prompt;
 
-                const prompt = `Professional 3D render of a ${objectName}, ${resolution} resolution.
-Camera angle: X rotation ${xDeg}°, Y rotation ${yDeg}° (${cameraAngle}).
-Style: Ultra-realistic 3D render with clean professional studio lighting, high detail and quality, suitable for product visualization.
-Center the object in frame with proper composition. Clean white or neutral background.`;
+                const prompt = `Professional 3D render of a ${objectName}. 
+Camera: ${cameraDesc}.
+Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures.
+Composition: Center the object in frame with proper composition and depth. Neutral or white background.
+Quality: ${resolution} resolution, sharp details, professional product photography quality.`;
 
                 try {
                     const response = await fetch('/api/generate', {
@@ -749,6 +830,32 @@ Center the object in frame with proper composition. Clean white or neutral backg
                                 <button className="btn-reset" onClick={resetAngle}>
                                     🔄 큐브 각도 리셋
                                 </button>
+                            </div>
+
+                            <div className="preset-angles-container">
+                                <label style={{marginBottom: '12px', display: 'block', fontSize: '13px', color: '#94a3b8'}}>
+                                    📐 빠른 각도 선택
+                                </label>
+                                <div className="preset-angles-grid">
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(0, 0)}>
+                                        정면
+                                    </button>
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(0, Math.PI/2)}>
+                                        우측
+                                    </button>
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(0, Math.PI)}>
+                                        후면
+                                    </button>
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(0.5, 0.5)}>
+                                        3/4 우상
+                                    </button>
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(Math.PI/2, 0)}>
+                                        상단
+                                    </button>
+                                    <button className="preset-angle-btn" onClick={() => setPresetAngle(0.5, -0.5)}>
+                                        3/4 좌상
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="angle-display">
