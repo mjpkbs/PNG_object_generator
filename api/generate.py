@@ -3,6 +3,8 @@ import json
 import base64
 import os
 import replicate
+from PIL import Image
+import io
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -22,6 +24,7 @@ class handler(BaseHTTPRequestHandler):
             replicate_api_key = body.get('replicateApiKey')
             prompt = body.get('prompt')
             resolution = body.get('resolution', '1024x1024')
+            model_choice = body.get('model', 'flux-pro')  # Default to FLUX Pro
             
             if not replicate_api_key:
                 self.send_error(400, 'Replicate API 키가 필요합니다')
@@ -32,8 +35,9 @@ class handler(BaseHTTPRequestHandler):
                 return
             
             print(f"🚀 이미지 생성 시작...")
+            print(f"Model: {model_choice}")
             print(f"Prompt: {prompt[:100]}...")
-            print(f"Resolution: {resolution}")
+            print(f"해상도: {resolution}")
             
             # Parse resolution
             width, height = map(int, resolution.split('x'))
@@ -41,41 +45,82 @@ class handler(BaseHTTPRequestHandler):
             # Set up Replicate
             os.environ['REPLICATE_API_TOKEN'] = replicate_api_key
             
-            # Use Flux Dev for higher resolution support (Schnell only does 1024x1024)
-            print("🎨 Flux Dev로 이미지 생성 중...")
-            output = replicate.run(
-                "black-forest-labs/flux-dev",
-                input={
-                    "prompt": prompt,
-                    "width": width,
-                    "height": height,
-                    "num_outputs": 1,
-                    "output_format": "png",
-                    "output_quality": 100,
-                    "guidance": 3.5,
-                    "num_inference_steps": 28
-                }
-            )
+            # Generate image based on selected model
+            if model_choice == 'flux-pro':
+                print(f"🎨 FLUX.1 Pro로 {width}x{height} 이미지 생성 중...")
+                output = replicate.run(
+                    "black-forest-labs/flux-1.1-pro",
+                    input={
+                        "prompt": prompt,
+                        "width": width,
+                        "height": height,
+                        "output_format": "png",
+                        "output_quality": 100,
+                        "safety_tolerance": 2,
+                        "prompt_upsampling": True
+                    }
+                )
+            elif model_choice == 'flux-schnell':
+                print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
+                output = replicate.run(
+                    "black-forest-labs/flux-schnell",
+                    input={
+                        "prompt": prompt,
+                        "output_format": "png",
+                        "output_quality": 100,
+                        "aspect_ratio": "1:1"
+                    }
+                )
+            elif model_choice == 'sdxl':
+                print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
+                output = replicate.run(
+                    "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+                    input={
+                        "prompt": prompt,
+                        "width": width,
+                        "height": height,
+                        "num_outputs": 1,
+                        "output_format": "png",
+                        "output_quality": 100
+                    }
+                )
+            elif model_choice == 'recraft':
+                print(f"🎨 Recraft V3로 {width}x{height} 이미지 생성 중...")
+                output = replicate.run(
+                    "recraft-ai/recraft-v3",
+                    input={
+                        "prompt": prompt,
+                        "size": f"{width}x{height}",
+                        "style": "realistic_image"
+                    }
+                )
+            else:
+                self.send_error(400, f'지원하지 않는 모델: {model_choice}')
+                return
             
-            print(f"📡 Flux 출력: {output}")
+            print(f"📡 모델 출력: {output}")
             
             # Download the generated image
-            # output is a list of FileOutput objects - convert to URL string
             import urllib.request
             file_output = output[0] if isinstance(output, list) else output
-            image_url = str(file_output)  # Convert FileOutput to URL string
+            image_url = str(file_output)
             
             print(f"🔗 이미지 URL: {image_url}")
             
             with urllib.request.urlopen(image_url) as response_data:
                 image_bytes = response_data.read()
             
+            # Verify generated image size
+            img = Image.open(io.BytesIO(image_bytes))
+            actual_size = img.size
+            print(f"✅ 생성된 이미지 크기: {actual_size[0]}x{actual_size[1]}")
+            
             # Convert to base64
             generated_image_data = base64.b64encode(image_bytes).decode('utf-8')
             
             print("✅ 이미지 생성 완료!")
             
-            # Now remove background with Replicate
+            # Remove background using 851-labs model
             has_transparency = False
             warning = None
             
@@ -103,7 +148,22 @@ class handler(BaseHTTPRequestHandler):
                 
                 # Download result
                 with urllib.request.urlopen(bg_url) as response_data:
-                    result_image_data = base64.b64encode(response_data.read()).decode('utf-8')
+                    bg_removed_bytes = response_data.read()
+                
+                # Resize back to original resolution if needed
+                bg_image = Image.open(io.BytesIO(bg_removed_bytes))
+                bg_size = bg_image.size
+                print(f"📏 배경 제거 후 크기: {bg_size}, 목표 크기: {actual_size}")
+                
+                if bg_size != actual_size:
+                    print(f"🔄 이미지 크기 복원 중: {bg_size} -> {actual_size}")
+                    # Use LANCZOS for high-quality upscaling
+                    bg_image = bg_image.resize(actual_size, Image.LANCZOS)
+                
+                # Convert back to base64
+                buffer = io.BytesIO()
+                bg_image.save(buffer, format='PNG')
+                result_image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
                 
                 os.unlink(tmp_filename)
                 
@@ -118,13 +178,17 @@ class handler(BaseHTTPRequestHandler):
                     'image': result_image_data,
                     'hasTransparency': has_transparency,
                     'warning': None,
-                    'resolution': resolution
+                    'resolution': f"{actual_size[0]}x{actual_size[1]}"
                 }).encode())
                 return
                 
             except Exception as bg_error:
                 print(f"❌ 배경 제거 실패: {bg_error}")
                 warning = f"배경 제거 실패: {str(bg_error)}. 원본 이미지를 반환합니다."
+                try:
+                    os.unlink(tmp_filename)
+                except:
+                    pass
             
             # Return original image if background removal failed
             self.send_response(200)
@@ -135,7 +199,7 @@ class handler(BaseHTTPRequestHandler):
                 'image': generated_image_data,
                 'hasTransparency': has_transparency,
                 'warning': warning,
-                'resolution': resolution
+                'resolution': f"{actual_size[0]}x{actual_size[1]}"
             }).encode())
             
         except Exception as e:
