@@ -57,25 +57,15 @@ class handler(BaseHTTPRequestHandler):
             
             # Generate image based on selected model
             try:
-                if model_choice == 'flux-pro':
-                    # FLUX.1 Pro max resolution is 1440x1440
-                    max_dimension = 1440
-                    if width > max_dimension or height > max_dimension:
-                        print(f"⚠️ Resolution {width}x{height} exceeds FLUX Pro limit, capping at {max_dimension}x{max_dimension}")
-                        width = min(width, max_dimension)
-                        height = min(height, max_dimension)
-                    
-                    print(f"🎨 FLUX.1 Pro로 {width}x{height} 이미지 생성 중...")
+                if model_choice == 'flux-schnell':
+                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
                     output = replicate.run(
-                        "black-forest-labs/flux-1.1-pro",
+                        "black-forest-labs/flux-schnell",
                         input={
                             "prompt": prompt,
-                            "width": width,
-                            "height": height,
                             "output_format": "png",
                             "output_quality": 100,
-                            "safety_tolerance": 2,
-                            "prompt_upsampling": True
+                            "aspect_ratio": "1:1"
                         }
                     )
                 elif model_choice == 'imagen-3':
@@ -116,43 +106,16 @@ class handler(BaseHTTPRequestHandler):
                             "output_format": "png"
                         }
                     )
-                elif model_choice == 'flux-schnell':
-                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
-                    output = replicate.run(
-                        "black-forest-labs/flux-schnell",
-                        input={
-                            "prompt": prompt,
-                            "output_format": "png",
-                            "output_quality": 100,
-                            "aspect_ratio": "1:1"
-                        }
-                    )
-                elif model_choice == 'sdxl':
-                    print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
-                    output = replicate.run(
-                        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-                        input={
-                            "prompt": prompt,
-                            "width": width,
-                            "height": height,
-                            "num_outputs": 1,
-                            "output_format": "png",
-                            "output_quality": 100
-                        }
-                    )
-                elif model_choice == 'recraft':
-                    print(f"🎨 Recraft V3로 {width}x{height} 이미지 생성 중...")
-                    output = replicate.run(
-                        "recraft-ai/recraft-v3",
-                        input={
-                            "prompt": prompt,
-                            "size": f"{width}x{height}",
-                            "style": "realistic_image"
-                        }
-                    )
                 else:
                     print(f"❌ Unknown model: {model_choice}")
-                    self.send_error(400, f'지원하지 않는 모델: {model_choice}')
+                    # Send JSON error instead of HTTP error
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'error': f'Unsupported model: {model_choice}'
+                    }).encode('utf-8'))
                     return
             except Exception as model_error:
                 print(f"❌ Model execution failed: {str(model_error)}")
