@@ -58,8 +58,12 @@ class handler(BaseHTTPRequestHandler):
             print(f"📡 Flux 출력: {output}")
             
             # Download the generated image
+            # output is a list of FileOutput objects - convert to URL string
             import urllib.request
-            image_url = output[0] if isinstance(output, list) else output
+            file_output = output[0] if isinstance(output, list) else output
+            image_url = str(file_output)  # Convert FileOutput to URL string
+            
+            print(f"🔗 이미지 URL: {image_url}")
             
             with urllib.request.urlopen(image_url) as response_data:
                 image_bytes = response_data.read()
