@@ -57,15 +57,17 @@ class handler(BaseHTTPRequestHandler):
             
             # Generate image based on selected model
             try:
-                if model_choice == 'flux-schnell':
-                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
+                if model_choice == 'sdxl':
+                    print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
                     output = replicate.run(
-                        "black-forest-labs/flux-schnell",
+                        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
                         input={
                             "prompt": prompt,
+                            "width": width,
+                            "height": height,
+                            "num_outputs": 1,
                             "output_format": "png",
-                            "output_quality": 100,
-                            "aspect_ratio": "1:1"
+                            "output_quality": 100
                         }
                     )
                 elif model_choice == 'flux-pro-ultra':
