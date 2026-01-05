@@ -565,14 +565,11 @@
                 { value: '2560x2560', label: '2.5K', details: '2560×2560', excludeModels: ['flux-pro', 'flux-schnell', 'sdxl'] }
             ];
 
-            // Model options with max resolution info
+            // Model options - Only 3 best models!
             const modelOptions = [
-                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 1K 전용', cost: '$', maxRes: '1024x1024' },
-                { value: 'flux-pro', label: 'FLUX Pro', details: '최고 품질, 최대 1.5K', cost: '$$', maxRes: '1440x1440' },
+                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 1K', cost: '$', maxRes: '1024x1024' },
                 { value: 'imagen-3', label: 'Imagen-3', details: 'Google 최고급, 2K+', cost: '$$', maxRes: '2560x2560' },
-                { value: 'nano-banana', label: 'Nano Banana', details: 'Google 편집 모델, 2K+', cost: '$$', maxRes: '2560x2560' },
-                { value: 'sdxl', label: 'SDXL', details: '안정적, 1K 전용', cost: '$', maxRes: '1024x1024' },
-                { value: 'recraft', label: 'Recraft V3', details: '리얼리스틱, 최대 2K', cost: '$', maxRes: '2048x2048' }
+                { value: 'nano-banana', label: 'Nano Banana', details: 'Google 빠름, 2K+', cost: '$$', maxRes: '2560x2560' }
             ];
 
             // Save API key
@@ -1031,12 +1028,9 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 </div>
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
                                     <strong>💡 모델 안내:</strong><br/>
-                                    • FLUX Schnell: 가장 빠름, 1K만 지원 (기본값)<br/>
-                                    • FLUX Pro: 고품질, 최대 1.5K (1440x1440)<br/>
-                                    • Imagen-3: Google 최고급, 2K+ 지원<br/>
-                                    • Nano Banana: Google 편집 모델, 2K+ 지원<br/>
-                                    • SDXL: 안정적, 1K만 지원<br/>
-                                    • Recraft V3: 리얼리스틱, 최대 2K 지원
+                                    • <strong>FLUX Schnell</strong>: 가장 빠름, 1K, 테스트용<br/>
+                                    • <strong>Imagen-3</strong>: Google 최고급 품질, 2K+<br/>
+                                    • <strong>Nano Banana</strong>: Google 빠른 고품질, 2K+
                                 </div>
                             </div>
 
@@ -1052,14 +1046,11 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                         <div className="loading-spinner"></div>
                                         <p style={{ color: '#94a3b8' }}>
                                             {model === 'flux-schnell' && 'FLUX Schnell로 빠르게 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'flux-pro' && 'FLUX Pro로 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                             {model === 'imagen-3' && 'Google Imagen-3로 최고급 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                             {model === 'nano-banana' && 'Google Nano Banana로 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'sdxl' && 'SDXL로 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'recraft' && 'Recraft V3로 리얼리스틱 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                         </p>
                                         <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                                            해상도: {resolution} (약 {model === 'flux-schnell' ? '5-15' : model === 'imagen-3' || model === 'nano-banana' ? '15-30' : '20-40'}초 소요)
+                                            해상도: {resolution} (약 {model === 'flux-schnell' ? '5-15' : '15-30'}초 소요)
                                         </p>
                                     </div>
                                 )}
