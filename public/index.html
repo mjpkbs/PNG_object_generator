@@ -239,6 +239,18 @@
             color: #0a0e1a;
         }
 
+        .resolution-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: rgba(148, 163, 184, 0.15);
+        }
+
+        .resolution-btn.disabled:hover {
+            border-color: rgba(148, 163, 184, 0.15);
+            background: #0a0e1a;
+            color: #94a3b8;
+        }
+
         .resolution-label {
             display: block;
             font-weight: 700;
@@ -530,20 +542,35 @@
             const rotationXRef = useRef(0.5);
             const rotationYRef = useRef(0.5);
 
+            // Auto-adjust resolution when model changes
+            useEffect(() => {
+                const currentModel = modelOptions.find(m => m.value === model);
+                if (!currentModel) return;
+                
+                const [currentWidth] = resolution.split('x').map(Number);
+                const [maxWidth] = currentModel.maxRes.split('x').map(Number);
+                
+                if (currentWidth > maxWidth) {
+                    // Auto-adjust to max supported resolution
+                    setResolution(currentModel.maxRes);
+                    console.log(`Auto-adjusted resolution from ${resolution} to ${currentModel.maxRes} for ${model}`);
+                }
+            }, [model]);
+
             // Resolution options
             const resolutionOptions = [
-                { value: '1024x1024', label: '1K', details: '1024×1024' },
-                { value: '1536x1536', label: '1.5K', details: '1536×1536' },
-                { value: '2048x2048', label: '2K', details: '2048×2048' },
-                { value: '2560x2560', label: '2.5K', details: '2560×2560' }
+                { value: '1024x1024', label: '1K', details: '1024×1024', allModels: true },
+                { value: '1440x1440', label: '1.5K', details: '1440×1440', allModels: true },
+                { value: '2048x2048', label: '2K', details: '2048×2048', excludeModels: ['flux-pro', 'flux-schnell', 'sdxl'] },
+                { value: '2560x2560', label: '2.5K', details: '2560×2560', excludeModels: ['flux-pro', 'flux-schnell', 'sdxl'] }
             ];
 
-            // Model options
+            // Model options with max resolution info
             const modelOptions = [
-                { value: 'flux-pro', label: 'FLUX Pro', details: '최고 품질, 모든 해상도 지원', cost: '$$' },
-                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 1K 전용', cost: '$' },
-                { value: 'sdxl', label: 'SDXL', details: '안정적, 고해상도', cost: '$' },
-                { value: 'recraft', label: 'Recraft V3', details: '리얼리스틱, 최신', cost: '$' }
+                { value: 'flux-pro', label: 'FLUX Pro', details: '최고 품질, 최대 1.5K', cost: '$$', maxRes: '1440x1440' },
+                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 1K 전용', cost: '$', maxRes: '1024x1024' },
+                { value: 'sdxl', label: 'SDXL', details: '안정적, 1K 전용', cost: '$', maxRes: '1024x1024' },
+                { value: 'recraft', label: 'Recraft V3', details: '리얼리스틱, 최대 2K', cost: '$', maxRes: '2048x2048' }
             ];
 
             // Save API key
@@ -963,16 +990,25 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                             <div className="form-group">
                                 <label>📐 이미지 해상도</label>
                                 <div className="resolution-group">
-                                    {resolutionOptions.map(option => (
-                                        <button
-                                            key={option.value}
-                                            className={`resolution-btn ${resolution === option.value ? 'active' : ''}`}
-                                            onClick={() => setResolution(option.value)}
-                                        >
-                                            <div className="resolution-label">{option.label}</div>
-                                            <div className="resolution-details">{option.details}</div>
-                                        </button>
-                                    ))}
+                                    {resolutionOptions.map(option => {
+                                        const currentModel = modelOptions.find(m => m.value === model);
+                                        const [optionWidth] = option.value.split('x').map(Number);
+                                        const [maxWidth] = currentModel.maxRes.split('x').map(Number);
+                                        const isDisabled = optionWidth > maxWidth;
+                                        
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                                onClick={() => !isDisabled && setResolution(option.value)}
+                                                disabled={isDisabled}
+                                                title={isDisabled ? `${currentModel.label}는 최대 ${currentModel.maxRes} 지원` : option.details}
+                                            >
+                                                <div className="resolution-label">{option.label}</div>
+                                                <div className="resolution-details">{option.details}</div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -993,10 +1029,10 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 </div>
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
                                     <strong>💡 모델 안내:</strong><br/>
-                                    • FLUX Pro: 최고 품질, 모든 해상도 완벽 지원 (권장!)<br/>
+                                    • FLUX Pro: 최고 품질, 최대 1.5K (1440x1440)<br/>
                                     • FLUX Schnell: 가장 빠름, 1K만 지원<br/>
-                                    • SDXL: 안정적인 고품질, 최대 1K<br/>
-                                    • Recraft V3: 최신 모델, 리얼리스틱
+                                    • SDXL: 안정적인 고품질, 1K만 지원<br/>
+                                    • Recraft V3: 최신 모델, 최대 2K 지원
                                 </div>
                             </div>
 

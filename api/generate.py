@@ -58,6 +58,13 @@ class handler(BaseHTTPRequestHandler):
             # Generate image based on selected model
             try:
                 if model_choice == 'flux-pro':
+                    # FLUX.1 Pro max resolution is 1440x1440
+                    max_dimension = 1440
+                    if width > max_dimension or height > max_dimension:
+                        print(f"⚠️ Resolution {width}x{height} exceeds FLUX Pro limit, capping at {max_dimension}x{max_dimension}")
+                        width = min(width, max_dimension)
+                        height = min(height, max_dimension)
+                    
                     print(f"🎨 FLUX.1 Pro로 {width}x{height} 이미지 생성 중...")
                     output = replicate.run(
                         "black-forest-labs/flux-1.1-pro",
@@ -113,7 +120,15 @@ class handler(BaseHTTPRequestHandler):
                 print(f"❌ Model execution failed: {str(model_error)}")
                 import traceback
                 traceback.print_exc()
-                self.send_error(500, f'모델 실행 실패: {str(model_error)}')
+                # Send JSON error instead of HTTP error to avoid encoding issues with Korean
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_msg = str(model_error)
+                self.wfile.write(json.dumps({
+                    'error': f'Model execution failed: {error_msg}'
+                }).encode('utf-8'))
                 return
             
             print(f"📡 모델 출력: {output}")
