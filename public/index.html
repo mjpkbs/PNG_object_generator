@@ -519,8 +519,8 @@
             const [hasTransparency, setHasTransparency] = useState(false);
             const [error, setError] = useState(null);
             const [warning, setWarning] = useState(null);
-            const [resolution, setResolution] = useState('1024x1024');
-            const [model, setModel] = useState('flux-pro'); // Model selector
+            const [resolution, setResolution] = useState('1024x1024'); // Default 1K
+            const [model, setModel] = useState('flux-schnell'); // Default FLUX Schnell
             
             const cubeRef = useRef(null);
             const sceneRef = useRef(null);
@@ -1010,8 +1010,15 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 {loading && (
                                     <div style={{ textAlign: 'center' }}>
                                         <div className="loading-spinner"></div>
-                                        <p style={{ color: '#94a3b8' }}>Flux Dev로 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...</p>
-                                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>해상도: {resolution} (약 20-40초 소요)</p>
+                                        <p style={{ color: '#94a3b8' }}>
+                                            {model === 'flux-schnell' && 'FLUX Schnell로 빠르게 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'flux-pro' && 'FLUX Pro로 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'sdxl' && 'SDXL로 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'recraft' && 'Recraft V3로 리얼리스틱 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                        </p>
+                                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                                            해상도: {resolution} (약 {model === 'flux-schnell' ? '5-15' : '20-40'}초 소요)
+                                        </p>
                                     </div>
                                 )}
 

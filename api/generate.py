@@ -29,7 +29,7 @@ class handler(BaseHTTPRequestHandler):
             replicate_api_key = body.get('replicateApiKey')
             prompt = body.get('prompt')
             resolution = body.get('resolution', '1024x1024')
-            model_choice = body.get('model', 'flux-pro')  # Default to FLUX Pro
+            model_choice = body.get('model', 'flux-schnell')  # Default to FLUX Schnell
             
             print(f"🤖 Model: {model_choice}")
             print(f"📐 Resolution: {resolution}")
