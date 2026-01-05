@@ -94,12 +94,13 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN (lucataco)
+                        # Upscale with Real-ESRGAN (nightmareai)
                         upscale_output = replicate.run(
-                            "lucataco/real-esrgan",  # Use latest version
+                            "nightmareai/real-esrgan",  # Use latest version
                             input={
                                 "image": image_url,
-                                "scale": scale
+                                "scale": scale,
+                                "face_enhance": False
                             }
                         )
                         # Update output to upscaled result
@@ -152,12 +153,13 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN (lucataco)
+                        # Upscale with Real-ESRGAN (nightmareai)
                         upscale_output = replicate.run(
-                            "lucataco/real-esrgan",  # Use latest version
+                            "nightmareai/real-esrgan",  # Use latest version
                             input={
                                 "image": image_url,
-                                "scale": scale
+                                "scale": scale,
+                                "face_enhance": False
                             }
                         )
                         # Update output to upscaled result
