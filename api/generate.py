@@ -69,6 +69,16 @@ class handler(BaseHTTPRequestHandler):
                         }
                     )
                     
+                    # Extract URL from FileOutput if needed
+                    if hasattr(output, 'url'):
+                        image_url = output.url
+                    elif isinstance(output, str):
+                        image_url = output
+                    else:
+                        image_url = str(output)
+                    
+                    print(f"🔗 생성된 이미지 URL: {image_url}")
+                    
                     # If resolution > 1K, upscale before background removal
                     if width > 1024 or height > 1024:
                         print(f"📈 Real-ESRGAN으로 {width}x{height}로 업스케일 중...")
@@ -85,27 +95,77 @@ class handler(BaseHTTPRequestHandler):
                         upscale_output = replicate.run(
                             "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
                             input={
-                                "image": output,
+                                "image": image_url,  # Use URL instead of FileOutput
                                 "scale": scale,
                                 "face_enhance": False
                             }
                         )
-                        output = upscale_output
-                        print(f"✅ 업스케일 완료!")
+                        # Update output to upscaled result
+                        if hasattr(upscale_output, 'url'):
+                            output = upscale_output.url
+                        elif isinstance(upscale_output, str):
+                            output = upscale_output
+                        else:
+                            output = str(upscale_output)
+                        print(f"✅ 업스케일 완료! URL: {output}")
+                    else:
+                        # Use original URL
+                        output = image_url
                     
-                elif model_choice == 'sdxl':
-                    print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
+                elif model_choice == 'nano-banana':
+                    print(f"🎨 Google Nano Banana로 이미지 생성 중 (1024x1024)...")
                     output = replicate.run(
-                        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+                        "google/nano-banana",
                         input={
                             "prompt": prompt,
-                            "width": width,
-                            "height": height,
-                            "num_outputs": 1,
-                            "output_format": "png",
-                            "output_quality": 100
+                            "aspect_ratio": "1:1",
+                            "output_format": "png"
                         }
                     )
+                    
+                    # Extract URL from output
+                    if hasattr(output, 'url'):
+                        image_url = output.url
+                    elif isinstance(output, str):
+                        image_url = output
+                    else:
+                        image_url = str(output)
+                    
+                    print(f"🔗 생성된 이미지 URL: {image_url}")
+                    
+                    # If resolution > 1K, upscale before background removal
+                    if width > 1024 or height > 1024:
+                        print(f"📈 Real-ESRGAN으로 {width}x{height}로 업스케일 중...")
+                        # Calculate scale factor
+                        scale_factor = max(width / 1024, height / 1024)
+                        if scale_factor <= 2:
+                            scale = 2
+                        elif scale_factor <= 4:
+                            scale = 4
+                        else:
+                            scale = 4  # Max scale
+                        
+                        # Upscale with Real-ESRGAN
+                        upscale_output = replicate.run(
+                            "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+                            input={
+                                "image": image_url,
+                                "scale": scale,
+                                "face_enhance": False
+                            }
+                        )
+                        # Update output to upscaled result
+                        if hasattr(upscale_output, 'url'):
+                            output = upscale_output.url
+                        elif isinstance(upscale_output, str):
+                            output = upscale_output
+                        else:
+                            output = str(upscale_output)
+                        print(f"✅ 업스케일 완료! URL: {output}")
+                    else:
+                        # Use original URL
+                        output = image_url
+                    
                 elif model_choice == 'flux-pro-ultra':
                     print(f"🎨 FLUX 1.1 Pro Ultra로 {width}x{height} 이미지 생성 중...")
                     # FLUX Pro Ultra supports up to 4MP (2048x2048+)
@@ -147,13 +207,18 @@ class handler(BaseHTTPRequestHandler):
             
             print(f"📡 모델 출력: {output}")
             
-            # Download the generated image
-            import urllib.request
-            file_output = output[0] if isinstance(output, list) else output
-            image_url = str(file_output)
+            # Extract URL from output (handles FileOutput, string, or other types)
+            if hasattr(output, 'url'):
+                image_url = output.url
+            elif isinstance(output, str):
+                image_url = output
+            else:
+                image_url = str(output)
             
             print(f"🔗 이미지 URL: {image_url}")
             
+            # Download the generated image
+            import urllib.request
             with urllib.request.urlopen(image_url) as response_data:
                 image_bytes = response_data.read()
             

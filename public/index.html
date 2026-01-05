@@ -563,7 +563,7 @@
             // Model options - 3 models with upscaling!
             const modelOptions = [
                 { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 자동 업스케일', cost: '$', maxRes: '2048x2048', canUpscale: true },
-                { value: 'sdxl', label: 'SDXL', details: '1K, 안정적', cost: '$', maxRes: '1024x1024', for1K: true },
+                { value: 'nano-banana', label: 'Nano Banana', details: 'Google, 자동 업스케일', cost: '$$', maxRes: '2048x2048', canUpscale: true },
                 { value: 'flux-pro-ultra', label: 'FLUX Pro Ultra', details: '네이티브 2K, 최고품질', cost: '$$$', maxRes: '2048x2048', for2K: true }
             ];
 
@@ -987,23 +987,17 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     {resolutionOptions.map(option => {
                                         const [optionWidth] = option.value.split('x').map(Number);
                                         let tooltipText = option.details;
-                                        if (model === 'flux-schnell' && optionWidth > 1024) {
+                                        if ((model === 'flux-schnell' || model === 'nano-banana') && optionWidth > 1024) {
                                             tooltipText += ' (1K 생성 + 업스케일)';
-                                        } else if (model === 'sdxl' && optionWidth > 1024) {
-                                            tooltipText += ' (SDXL은 1K만 지원)';
                                         } else if (model === 'flux-pro-ultra') {
                                             tooltipText += ' (네이티브 생성)';
                                         }
                                         
-                                        // Disable >1K for SDXL
-                                        const isDisabled = model === 'sdxl' && optionWidth > 1024;
-                                        
                                         return (
                                             <button
                                                 key={option.value}
-                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                                onClick={() => !isDisabled && setResolution(option.value)}
-                                                disabled={isDisabled}
+                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''}`}
+                                                onClick={() => setResolution(option.value)}
                                                 title={tooltipText}
                                             >
                                                 <div className="resolution-label">{option.label}</div>
@@ -1036,12 +1030,12 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 </div>
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
                                     <strong>💡 모델 선택 가이드:</strong><br/>
-                                    • <strong>FLUX Schnell</strong>: 빠름, 1K 생성 + AI 업스케일로 2K 가능 (기본값)<br/>
-                                    • <strong>SDXL</strong>: 안정적, 1K 전용<br/>
+                                    • <strong>FLUX Schnell</strong>: 가장 빠름, 1K 생성 + AI 업스케일로 2K 가능 (기본값)<br/>
+                                    • <strong>Nano Banana</strong>: Google 모델, 1K 생성 + AI 업스케일로 2K 가능<br/>
                                     • <strong>FLUX Pro Ultra</strong>: 네이티브 2K, 최고 품질<br/>
                                     <br/>
                                     <strong>📈 자동 업스케일:</strong><br/>
-                                    FLUX Schnell로 2K 선택 시 Real-ESRGAN으로 자동 업스케일됩니다!
+                                    FLUX Schnell과 Nano Banana는 2K 선택 시 Real-ESRGAN으로 자동 업스케일됩니다!
                                 </div>
                             </div>
 
@@ -1058,13 +1052,15 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                         <p style={{ color: '#94a3b8' }}>
                                             {model === 'flux-schnell' && resolution === '1024x1024' && 'FLUX Schnell로 빠르게 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                             {model === 'flux-schnell' && resolution !== '1024x1024' && `FLUX Schnell로 1K 이미지 생성 → ${resolution}로 업스케일 → 배경 제거 중...`}
-                                            {model === 'sdxl' && 'Stable Diffusion XL로 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'nano-banana' && resolution === '1024x1024' && 'Google Nano Banana로 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'nano-banana' && resolution !== '1024x1024' && `Nano Banana로 1K 이미지 생성 → ${resolution}로 업스케일 → 배경 제거 중...`}
                                             {model === 'flux-pro-ultra' && 'FLUX Pro Ultra로 최고급 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                         </p>
                                         <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
                                             {model === 'flux-schnell' && resolution === '1024x1024' && '약 5-15초 소요'}
                                             {model === 'flux-schnell' && resolution !== '1024x1024' && `생성 5-10초 + 업스케일 10-15초 = 약 15-25초`}
-                                            {model === 'sdxl' && '약 10-20초 소요'}
+                                            {model === 'nano-banana' && resolution === '1024x1024' && '약 8-18초 소요'}
+                                            {model === 'nano-banana' && resolution !== '1024x1024' && `생성 8-15초 + 업스케일 10-15초 = 약 18-30초`}
                                             {model === 'flux-pro-ultra' && '약 20-40초 소요'}
                                         </p>
                                     </div>
