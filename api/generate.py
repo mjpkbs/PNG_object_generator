@@ -68,42 +68,30 @@ class handler(BaseHTTPRequestHandler):
                             "aspect_ratio": "1:1"
                         }
                     )
-                elif model_choice == 'imagen-3':
-                    print(f"🎨 Google Imagen-3로 이미지 생성 중...")
-                    # Imagen-3 uses aspect ratios, not pixel dimensions
-                    # Convert resolution to aspect ratio
-                    if width == height:
-                        aspect_ratio = "1:1"
-                    elif width > height:
-                        aspect_ratio = "16:9"
-                    else:
-                        aspect_ratio = "9:16"
-                    
+                elif model_choice == 'imagen-4':
+                    print(f"🎨 Google Imagen-4로 {width}x{height} 이미지 생성 중...")
+                    # Imagen-4 supports up to 2048x2048
                     output = replicate.run(
-                        "google/imagen-3",
+                        "google/imagen-4",
                         input={
                             "prompt": prompt,
-                            "aspect_ratio": aspect_ratio,
+                            "width": width,
+                            "height": height,
                             "output_format": "png",
                             "safety_filter_level": "block_medium_and_above"
                         }
                     )
-                elif model_choice == 'nano-banana':
-                    print(f"🎨 Google Nano Banana로 이미지 생성 중...")
-                    # Nano Banana also uses aspect ratios
-                    if width == height:
-                        aspect_ratio = "1:1"
-                    elif width > height:
-                        aspect_ratio = "16:9"
-                    else:
-                        aspect_ratio = "9:16"
-                    
+                elif model_choice == 'imagen-4-fast':
+                    print(f"🎨 Google Imagen-4 Fast로 {width}x{height} 이미지 생성 중...")
+                    # Imagen-4-fast also supports up to 2048x2048
                     output = replicate.run(
-                        "google/nano-banana",
+                        "google/imagen-4-fast",
                         input={
                             "prompt": prompt,
-                            "aspect_ratio": aspect_ratio,
-                            "output_format": "png"
+                            "width": width,
+                            "height": height,
+                            "output_format": "png",
+                            "safety_filter_level": "block_medium_and_above"
                         }
                     )
                 else:
@@ -167,10 +155,10 @@ class handler(BaseHTTPRequestHandler):
                     tmp_file.write(image_bytes)
                     tmp_filename = tmp_file.name
                 
-                # Remove background using lucataco model (FAST and reliable!)
+                # Remove background using BiRefNet (best quality!)
                 with open(tmp_filename, 'rb') as image_file:
                     bg_output = replicate.run(
-                        "lucataco/remove-bg:95fcc2a26d3899cd6c2691c900465aaeff466285a65c14638cc5f36f34befaf1",
+                        "men1scus/birefnet:f74986db0355b58403ed20963af156525e2891ea3c2d499bfbfb2a28cd87c5d7",
                         input={"image": image_file}
                     )
                 

@@ -542,34 +542,37 @@
             const rotationXRef = useRef(0.5);
             const rotationYRef = useRef(0.5);
 
-            // Auto-adjust resolution when model changes
-            useEffect(() => {
-                const currentModel = modelOptions.find(m => m.value === model);
-                if (!currentModel) return;
-                
-                const [currentWidth] = resolution.split('x').map(Number);
-                const [maxWidth] = currentModel.maxRes.split('x').map(Number);
-                
-                if (currentWidth > maxWidth) {
-                    // Auto-adjust to max supported resolution
-                    setResolution(currentModel.maxRes);
-                    console.log(`Auto-adjusted resolution from ${resolution} to ${currentModel.maxRes} for ${model}`);
-                }
-            }, [model]);
-
-            // Resolution options
+            // Resolution options - max 2K
             const resolutionOptions = [
                 { value: '1024x1024', label: '1K', details: '1024×1024', allModels: true },
-                { value: '1440x1440', label: '1.5K', details: '1440×1440', allModels: true },
-                { value: '2048x2048', label: '2K', details: '2048×2048', excludeModels: ['flux-pro', 'flux-schnell', 'sdxl'] },
-                { value: '2560x2560', label: '2.5K', details: '2560×2560', excludeModels: ['flux-pro', 'flux-schnell', 'sdxl'] }
+                { value: '1440x1440', label: '1.5K', details: '1440×1440', needsImagen: true },
+                { value: '2048x2048', label: '2K', details: '2048×2048', needsImagen: true }
             ];
 
-            // Model options - Only 3 best models!
+            // Auto-select model based on resolution
+            useEffect(() => {
+                const [currentWidth] = resolution.split('x').map(Number);
+                
+                if (currentWidth <= 1024) {
+                    // For 1K, use FLUX Schnell (fastest)
+                    if (model !== 'flux-schnell') {
+                        setModel('flux-schnell');
+                        console.log('Auto-selected FLUX Schnell for 1K resolution');
+                    }
+                } else {
+                    // For >1K, need Imagen-4 or Imagen-4-fast
+                    if (model === 'flux-schnell') {
+                        setModel('imagen-4-fast'); // Default to fast version
+                        console.log(`Auto-selected Imagen-4 Fast for ${resolution} resolution`);
+                    }
+                }
+            }, [resolution]);
+
+            // Model options - Auto-selected based on resolution!
             const modelOptions = [
-                { value: 'flux-schnell', label: 'FLUX Schnell', details: '빠름, 1K', cost: '$', maxRes: '1024x1024' },
-                { value: 'imagen-3', label: 'Imagen-3', details: 'Google 최고급, 2K+', cost: '$$', maxRes: '2560x2560' },
-                { value: 'nano-banana', label: 'Nano Banana', details: 'Google 빠름, 2K+', cost: '$$', maxRes: '2560x2560' }
+                { value: 'flux-schnell', label: 'FLUX Schnell', details: '1K 전용, 빠름', cost: '$', maxRes: '1024x1024', for1K: true },
+                { value: 'imagen-4', label: 'Imagen-4', details: '최고 품질, 2K', cost: '$$', maxRes: '2048x2048', for2K: true },
+                { value: 'imagen-4-fast', label: 'Imagen-4 Fast', details: '빠른 2K', cost: '$$', maxRes: '2048x2048', for2K: true }
             ];
 
             // Save API key
@@ -990,18 +993,15 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 <label>📐 이미지 해상도</label>
                                 <div className="resolution-group">
                                     {resolutionOptions.map(option => {
-                                        const currentModel = modelOptions.find(m => m.value === model);
                                         const [optionWidth] = option.value.split('x').map(Number);
-                                        const [maxWidth] = currentModel.maxRes.split('x').map(Number);
-                                        const isDisabled = optionWidth > maxWidth;
+                                        const willUseModel = optionWidth <= 1024 ? 'FLUX Schnell' : 'Imagen-4';
                                         
                                         return (
                                             <button
                                                 key={option.value}
-                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                                onClick={() => !isDisabled && setResolution(option.value)}
-                                                disabled={isDisabled}
-                                                title={isDisabled ? `${currentModel.label}는 최대 ${currentModel.maxRes} 지원` : option.details}
+                                                className={`resolution-btn ${resolution === option.value ? 'active' : ''}`}
+                                                onClick={() => setResolution(option.value)}
+                                                title={`${option.details} → ${willUseModel} 사용`}
                                             >
                                                 <div className="resolution-label">{option.label}</div>
                                                 <div className="resolution-details">{option.details}</div>
@@ -1013,6 +1013,11 @@ Quality: Sharp details, professional product photography quality, true-to-life c
 
                             <div className="form-group">
                                 <label>🤖 AI 모델 선택</label>
+                                <div className="info-box" style={{marginBottom: '12px', fontSize: '12px', background: 'rgba(0, 212, 255, 0.1)', borderColor: 'rgba(0, 212, 255, 0.3)'}}>
+                                    <strong>현재 선택된 모델:</strong> {modelOptions.find(m => m.value === model)?.label || model}
+                                    {resolution === '1024x1024' && ' (1K 최적화)'}
+                                    {resolution !== '1024x1024' && ' (고해상도)'}
+                                </div>
                                 <div className="resolution-group">
                                     {modelOptions.map(option => (
                                         <button
@@ -1027,10 +1032,11 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     ))}
                                 </div>
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
-                                    <strong>💡 모델 안내:</strong><br/>
-                                    • <strong>FLUX Schnell</strong>: 가장 빠름, 1K, 테스트용<br/>
-                                    • <strong>Imagen-3</strong>: Google 최고급 품질, 2K+<br/>
-                                    • <strong>Nano Banana</strong>: Google 빠른 고품질, 2K+
+                                    <strong>💡 자동 모델 선택:</strong><br/>
+                                    • <strong>1K</strong> → FLUX Schnell (빠름, 5-15초)<br/>
+                                    • <strong>1.5K/2K</strong> → Imagen-4 Fast (빠름) 또는 Imagen-4 (최고 품질)<br/>
+                                    <br/>
+                                    해상도를 선택하면 자동으로 최적의 모델이 선택됩니다!
                                 </div>
                             </div>
 
@@ -1045,12 +1051,12 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     <div style={{ textAlign: 'center' }}>
                                         <div className="loading-spinner"></div>
                                         <p style={{ color: '#94a3b8' }}>
-                                            {model === 'flux-schnell' && 'FLUX Schnell로 빠르게 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'imagen-3' && 'Google Imagen-3로 최고급 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'nano-banana' && 'Google Nano Banana로 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'flux-schnell' && 'FLUX Schnell로 빠르게 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'imagen-4' && 'Google Imagen-4로 최고급 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'imagen-4-fast' && 'Google Imagen-4 Fast로 빠르게 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                         </p>
                                         <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                                            해상도: {resolution} (약 {model === 'flux-schnell' ? '5-15' : '15-30'}초 소요)
+                                            해상도: {resolution} ({model === 'flux-schnell' ? '약 5-15초' : model === 'imagen-4-fast' ? '약 10-20초' : '약 15-30초'} 소요)
                                         </p>
                                     </div>
                                 )}
