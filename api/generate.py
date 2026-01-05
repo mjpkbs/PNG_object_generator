@@ -68,30 +68,17 @@ class handler(BaseHTTPRequestHandler):
                             "aspect_ratio": "1:1"
                         }
                     )
-                elif model_choice == 'imagen-4':
-                    print(f"🎨 Google Imagen-4로 {width}x{height} 이미지 생성 중...")
-                    # Imagen-4 supports up to 2048x2048
+                elif model_choice == 'flux-pro-ultra':
+                    print(f"🎨 FLUX 1.1 Pro Ultra로 {width}x{height} 이미지 생성 중...")
+                    # FLUX Pro Ultra supports up to 4MP (2048x2048+)
                     output = replicate.run(
-                        "google/imagen-4",
+                        "black-forest-labs/flux-1.1-pro-ultra",
                         input={
                             "prompt": prompt,
-                            "width": width,
-                            "height": height,
+                            "aspect_ratio": "1:1",
                             "output_format": "png",
-                            "safety_filter_level": "block_medium_and_above"
-                        }
-                    )
-                elif model_choice == 'imagen-4-fast':
-                    print(f"🎨 Google Imagen-4 Fast로 {width}x{height} 이미지 생성 중...")
-                    # Imagen-4-fast also supports up to 2048x2048
-                    output = replicate.run(
-                        "google/imagen-4-fast",
-                        input={
-                            "prompt": prompt,
-                            "width": width,
-                            "height": height,
-                            "output_format": "png",
-                            "safety_filter_level": "block_medium_and_above"
+                            "output_quality": "ultra",  # ultra for highest quality
+                            "safety_tolerance": 2
                         }
                     )
                 else:

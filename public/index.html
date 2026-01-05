@@ -560,19 +560,18 @@
                         console.log('Auto-selected FLUX Schnell for 1K resolution');
                     }
                 } else {
-                    // For >1K, need Imagen-4 or Imagen-4-fast
+                    // For >1K, use FLUX Pro Ultra (TRUE 2K-4MP support)
                     if (model === 'flux-schnell') {
-                        setModel('imagen-4-fast'); // Default to fast version
-                        console.log(`Auto-selected Imagen-4 Fast for ${resolution} resolution`);
+                        setModel('flux-pro-ultra');
+                        console.log(`Auto-selected FLUX Pro Ultra for ${resolution} resolution`);
                     }
                 }
             }, [resolution]);
 
-            // Model options - Auto-selected based on resolution!
+            // Model options - TRUE 2K support!
             const modelOptions = [
                 { value: 'flux-schnell', label: 'FLUX Schnell', details: '1K 전용, 빠름', cost: '$', maxRes: '1024x1024', for1K: true },
-                { value: 'imagen-4', label: 'Imagen-4', details: '최고 품질, 2K', cost: '$$', maxRes: '2048x2048', for2K: true },
-                { value: 'imagen-4-fast', label: 'Imagen-4 Fast', details: '빠른 2K', cost: '$$', maxRes: '2048x2048', for2K: true }
+                { value: 'flux-pro-ultra', label: 'FLUX Pro Ultra', details: '최대 4MP, 최고품질', cost: '$$$', maxRes: '2048x2048', for2K: true }
             ];
 
             // Save API key
@@ -797,17 +796,17 @@
 
                 const cameraDesc = cameraAngleData.prompt;
                 
-                // ALWAYS use colored background for reliable background removal
-                // But ensure object has white/neutral lighting (not blue reflections)
-                const backgroundDesc = "vibrant solid blue background (#0066FF), clean studio background, uniform blue color";
-                const lightingDesc = "professional white studio lighting, neutral white light, soft white reflections on object, no colored light spill, pure white key light and fill light";
+                // Use light gray background instead of blue to avoid color spill on objects
+                // Gray provides enough contrast for BG removal without affecting object colors
+                const backgroundDesc = "light gray background (#E5E5E5), clean neutral studio background, no shadows";
+                const lightingDesc = "professional white studio lighting, neutral white light, soft white reflections on object, pure white key light and fill light, no colored lighting";
 
                 const prompt = `Professional 3D render of a ${objectName}. 
 Camera: ${cameraDesc}.
 Background: ${backgroundDesc}.
-Lighting: ${lightingDesc}. The object should be lit with pure white light sources only, with natural colors and white highlights. The blue background should NOT cast any blue light or reflections onto the object.
-Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures, accurate object colors without color contamination from background.
-Composition: Center the object in frame with proper composition and depth. The object should be clearly separated from the blue background with proper edge definition.
+Lighting: ${lightingDesc}. The object should be lit with pure white light sources only, with natural accurate colors and white highlights. The background should NOT cast any colored light onto the object.
+Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures, accurate object colors without color contamination.
+Composition: Center the object in frame with proper composition and depth. The object should be clearly separated from the background with proper edge definition.
 Quality: Sharp details, professional product photography quality, true-to-life colors.`;
 
                 try {
@@ -994,7 +993,7 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 <div className="resolution-group">
                                     {resolutionOptions.map(option => {
                                         const [optionWidth] = option.value.split('x').map(Number);
-                                        const willUseModel = optionWidth <= 1024 ? 'FLUX Schnell' : 'Imagen-4';
+                                        const willUseModel = optionWidth <= 1024 ? 'FLUX Schnell' : 'FLUX Pro Ultra';
                                         
                                         return (
                                             <button
@@ -1034,9 +1033,10 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                 <div className="info-box" style={{marginTop: '12px', fontSize: '12px'}}>
                                     <strong>💡 자동 모델 선택:</strong><br/>
                                     • <strong>1K</strong> → FLUX Schnell (빠름, 5-15초)<br/>
-                                    • <strong>1.5K/2K</strong> → Imagen-4 Fast (빠름) 또는 Imagen-4 (최고 품질)<br/>
+                                    • <strong>1.5K/2K</strong> → FLUX Pro Ultra (진짜 2K, 최고 품질)<br/>
                                     <br/>
-                                    해상도를 선택하면 자동으로 최적의 모델이 선택됩니다!
+                                    해상도를 선택하면 자동으로 최적의 모델이 선택됩니다!<br/>
+                                    FLUX Pro Ultra는 최대 4MP까지 생성 가능합니다.
                                 </div>
                             </div>
 
@@ -1052,11 +1052,10 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                         <div className="loading-spinner"></div>
                                         <p style={{ color: '#94a3b8' }}>
                                             {model === 'flux-schnell' && 'FLUX Schnell로 빠르게 1K 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'imagen-4' && 'Google Imagen-4로 최고급 이미지를 생성하고 배경을 제거하고 있습니다...'}
-                                            {model === 'imagen-4-fast' && 'Google Imagen-4 Fast로 빠르게 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
+                                            {model === 'flux-pro-ultra' && 'FLUX Pro Ultra로 최고급 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...'}
                                         </p>
                                         <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                                            해상도: {resolution} ({model === 'flux-schnell' ? '약 5-15초' : model === 'imagen-4-fast' ? '약 10-20초' : '약 15-30초'} 소요)
+                                            해상도: {resolution} ({model === 'flux-schnell' ? '약 5-15초' : '약 20-40초'} 소요)
                                         </p>
                                     </div>
                                 )}
