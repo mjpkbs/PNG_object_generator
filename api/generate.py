@@ -78,6 +78,44 @@ class handler(BaseHTTPRequestHandler):
                             "prompt_upsampling": True
                         }
                     )
+                elif model_choice == 'imagen-3':
+                    print(f"🎨 Google Imagen-3로 이미지 생성 중...")
+                    # Imagen-3 uses aspect ratios, not pixel dimensions
+                    # Convert resolution to aspect ratio
+                    if width == height:
+                        aspect_ratio = "1:1"
+                    elif width > height:
+                        aspect_ratio = "16:9"
+                    else:
+                        aspect_ratio = "9:16"
+                    
+                    output = replicate.run(
+                        "google/imagen-3",
+                        input={
+                            "prompt": prompt,
+                            "aspect_ratio": aspect_ratio,
+                            "output_format": "png",
+                            "safety_filter_level": "block_medium_and_above"
+                        }
+                    )
+                elif model_choice == 'nano-banana':
+                    print(f"🎨 Google Nano Banana로 이미지 생성 중...")
+                    # Nano Banana also uses aspect ratios
+                    if width == height:
+                        aspect_ratio = "1:1"
+                    elif width > height:
+                        aspect_ratio = "16:9"
+                    else:
+                        aspect_ratio = "9:16"
+                    
+                    output = replicate.run(
+                        "google/nano-banana",
+                        input={
+                            "prompt": prompt,
+                            "aspect_ratio": aspect_ratio,
+                            "output_format": "png"
+                        }
+                    )
                 elif model_choice == 'flux-schnell':
                     print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
                     output = replicate.run(
