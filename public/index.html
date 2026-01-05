@@ -621,55 +621,96 @@
                 const normalizedX = ((xDeg % 360) + 360) % 360;
                 const normalizedY = ((yDeg % 360) + 360) % 360;
                 
-                // Front view (looking straight at front)
-                if (normalizedX < 30 && normalizedY < 30) 
-                    return { display: "정면 (Front)", prompt: "straight front view, facing camera directly" };
+                // Helper function to check if angle is within range
+                const inRange = (angle, target, tolerance = 25) => {
+                    return Math.abs(angle - target) < tolerance || 
+                           Math.abs(angle - target + 360) < tolerance ||
+                           Math.abs(angle - target - 360) < tolerance;
+                };
                 
-                // Right side view
-                if (normalizedX < 30 && normalizedY > 60 && normalizedY < 120) 
-                    return { display: "우측면 (Right)", prompt: "right side view, 90 degrees from front" };
+                // FRONT VIEW - Looking straight at front (Y=0, X near 0)
+                if (inRange(normalizedX, 0, 15) && inRange(normalizedY, 0, 15)) 
+                    return { display: "정면 (Front)", prompt: "direct front view, straight on, eye level, facing camera" };
                 
-                // Back view
-                if (normalizedX < 30 && normalizedY > 150 && normalizedY < 210) 
-                    return { display: "후면 (Back)", prompt: "back view, rear facing" };
+                // RIGHT SIDE VIEW - 90 degrees right (Y=90, X near 0)
+                if (inRange(normalizedX, 0, 15) && inRange(normalizedY, 90, 15)) 
+                    return { display: "우측면 (Right)", prompt: "perfect right side view, 90 degree profile, orthographic side angle" };
                 
-                // Left side view
-                if (normalizedX < 30 && (normalizedY > 240 && normalizedY < 300)) 
-                    return { display: "좌측면 (Left)", prompt: "left side view, 90 degrees from front" };
+                // BACK VIEW - Looking at back (Y=180, X near 0)
+                if (inRange(normalizedX, 0, 15) && (inRange(normalizedY, 180, 15) || inRange(normalizedY, -180, 15))) 
+                    return { display: "후면 (Back)", prompt: "back view, rear angle, looking at the back side" };
                 
-                // Top view (bird's eye)
-                if (normalizedX > 60 && normalizedX < 120) 
-                    return { display: "상단 (Top)", prompt: "top view, bird's eye view from directly above" };
+                // LEFT SIDE VIEW - 90 degrees left (Y=270 or -90, X near 0)
+                if (inRange(normalizedX, 0, 15) && (inRange(normalizedY, 270, 15) || inRange(normalizedY, -90, 15))) 
+                    return { display: "좌측면 (Left)", prompt: "perfect left side view, 90 degree profile, orthographic side angle" };
                 
-                // Bottom view
-                if (normalizedX > 240 && normalizedX < 300) 
-                    return { display: "하단 (Bottom)", prompt: "bottom view, looking up from below" };
+                // TOP VIEW - Bird's eye (X=90)
+                if (inRange(normalizedX, 90, 15)) 
+                    return { display: "상단 (Top)", prompt: "top-down view, bird's eye view, looking directly down from above, flat lay angle" };
                 
-                // Three-quarter views (most common for product renders)
-                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 20 && normalizedY < 60) 
-                    return { display: "우상단 3/4 (Top-Right 3/4)", prompt: "three-quarter view from top right, elevated 30 degrees, rotated 45 degrees" };
+                // BOTTOM VIEW - Looking up (X=270 or -90)
+                if (inRange(normalizedX, 270, 15) || inRange(normalizedX, -90, 15)) 
+                    return { display: "하단 (Bottom)", prompt: "bottom view, worm's eye view, looking up from below" };
                 
-                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 300 && normalizedY < 340) 
-                    return { display: "좌상단 3/4 (Top-Left 3/4)", prompt: "three-quarter view from top left, elevated 30 degrees, rotated 45 degrees" };
+                // THREE-QUARTER VIEWS (Most popular for product renders!)
                 
-                if (normalizedX > 20 && normalizedX < 50 && normalizedY > 150 && normalizedY < 210) 
-                    return { display: "후상단 3/4 (Back 3/4)", prompt: "three-quarter back view from above, elevated 30 degrees" };
+                // Front-Right 3/4 (X=30-45, Y=30-60) - Most common product angle
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 20 && normalizedY < 70) 
+                    return { display: "우상단 3/4 (Front-Right 3/4)", prompt: "three-quarter view from front-right, camera elevated 35 degrees, rotated 45 degrees clockwise, classic product photography angle" };
                 
-                // Isometric-style views
-                if (normalizedX > 30 && normalizedX < 60) {
-                    if (normalizedY > 30 && normalizedY < 90)
-                        return { display: "아이소메트릭 우측 (Isometric Right)", prompt: "isometric view from the right, 35-degree angle" };
-                    if (normalizedY > 270 && normalizedY < 330)
-                        return { display: "아이소메트릭 좌측 (Isometric Left)", prompt: "isometric view from the left, 35-degree angle" };
+                // Front-Left 3/4 (X=30-45, Y=300-330 or -60 to -30)
+                if (normalizedX > 20 && normalizedX < 60 && (normalizedY > 290 || normalizedY < 340)) 
+                    return { display: "좌상단 3/4 (Front-Left 3/4)", prompt: "three-quarter view from front-left, camera elevated 35 degrees, rotated 45 degrees counter-clockwise" };
+                
+                // Back-Right 3/4 (X=30-45, Y=120-150)
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 110 && normalizedY < 160) 
+                    return { display: "후우측 3/4 (Back-Right 3/4)", prompt: "three-quarter view from back-right, elevated angle, showing rear and right side" };
+                
+                // Back-Left 3/4 (X=30-45, Y=210-240)
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 200 && normalizedY < 250) 
+                    return { display: "후좌측 3/4 (Back-Left 3/4)", prompt: "three-quarter view from back-left, elevated angle, showing rear and left side" };
+                
+                // ISOMETRIC VIEWS (35.264 degrees for true isometric)
+                
+                // Isometric Front-Right
+                if (normalizedX > 30 && normalizedX < 50 && normalizedY > 35 && normalizedY < 55)
+                    return { display: "아이소메트릭 우전 (Iso Front-Right)", prompt: "isometric view from front-right, true isometric angle at 35.264 degrees, technical drawing style" };
+                
+                // Isometric Front-Left
+                if (normalizedX > 30 && normalizedX < 50 && (normalizedY > 305 || normalizedY < 325))
+                    return { display: "아이소메트릭 좌전 (Iso Front-Left)", prompt: "isometric view from front-left, true isometric angle at 35.264 degrees, technical drawing style" };
+                
+                // HIGH ANGLE (looking down, X > 60)
+                if (normalizedX > 60 && normalizedX < 90) {
+                    if (normalizedY < 45) return { display: "고각도 정면 (High Front)", prompt: "high angle view from front, camera looking down at 60-70 degrees, elevated perspective" };
+                    if (normalizedY > 45 && normalizedY < 135) return { display: "고각도 우측 (High Right)", prompt: "high angle view from right side, camera looking down at 60-70 degrees" };
+                    if (normalizedY > 135 && normalizedY < 225) return { display: "고각도 후면 (High Back)", prompt: "high angle view from back, camera looking down at 60-70 degrees" };
+                    return { display: "고각도 좌측 (High Left)", prompt: "high angle view from left side, camera looking down at 60-70 degrees" };
                 }
                 
-                // General angled view
-                const angle = normalizedX > 45 ? "high angle" : "eye level";
-                const rotation = normalizedY < 90 ? "slightly rotated right" : normalizedY < 180 ? "rotated" : normalizedY < 270 ? "slightly rotated left" : "facing forward";
+                // LOW ANGLE (looking up, X < 0 or X > 270)
+                if ((normalizedX > 270 && normalizedX < 360) || (normalizedX > 0 && normalizedX < 20)) {
+                    // Actually low angle would be negative X or X close to 360
+                    // But let's handle the transition zone
+                }
+                
+                // GENERAL ANGLED VIEW (fallback)
+                const elevationDesc = normalizedX < 15 ? "eye level" : 
+                                     normalizedX < 45 ? "slightly elevated" :
+                                     normalizedX < 75 ? "elevated angle" : "high angle";
+                                     
+                const rotationDesc = normalizedY < 30 ? "facing mostly forward" :
+                                    normalizedY < 80 ? "rotated toward right" :
+                                    normalizedY < 100 ? "showing right side" :
+                                    normalizedY < 170 ? "rotated toward back" :
+                                    normalizedY < 190 ? "facing back" :
+                                    normalizedY < 260 ? "rotated toward left" :
+                                    normalizedY < 280 ? "showing left side" :
+                                    normalizedY < 330 ? "rotated toward front-left" : "facing mostly forward";
                 
                 return { 
-                    display: "각진 뷰 (Angled)", 
-                    prompt: `${angle} view, ${rotation}, professional product photography angle` 
+                    display: `각진 뷰 (${elevationDesc})`, 
+                    prompt: `${elevationDesc} perspective, ${rotationDesc}, professional product photography composition` 
                 };
             };
 
@@ -717,12 +758,17 @@
                 setGeneratedImage(null);
 
                 const cameraDesc = cameraAngleData.prompt;
+                
+                // ALWAYS use colored background for reliable background removal
+                // This ensures high contrast regardless of object color
+                const backgroundDesc = "vibrant solid blue background (#0066FF), clean studio background, uniform blue color";
 
                 const prompt = `Professional 3D render of a ${objectName}. 
 Camera: ${cameraDesc}.
+Background: ${backgroundDesc}.
 Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures.
-Composition: Center the object in frame with proper composition and depth. Neutral or white background.
-Quality: ${resolution} resolution, sharp details, professional product photography quality.`;
+Composition: Center the object in frame with proper composition and depth. The object should be clearly separated from the blue background.
+Quality: Sharp details, professional product photography quality.`;
 
                 try {
                     const response = await fetch('/api/generate', {
@@ -919,8 +965,8 @@ Quality: ${resolution} resolution, sharp details, professional product photograp
                                 {loading && (
                                     <div style={{ textAlign: 'center' }}>
                                         <div className="loading-spinner"></div>
-                                        <p style={{ color: '#94a3b8' }}>AI가 이미지를 생성하고 배경을 제거하고 있습니다...</p>
-                                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>해상도: {resolution} (약 15-60초 소요)</p>
+                                        <p style={{ color: '#94a3b8' }}>Flux Dev로 고해상도 이미지를 생성하고 배경을 제거하고 있습니다...</p>
+                                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>해상도: {resolution} (약 20-40초 소요)</p>
                                     </div>
                                 )}
 

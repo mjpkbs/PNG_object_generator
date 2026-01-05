@@ -41,17 +41,19 @@ class handler(BaseHTTPRequestHandler):
             # Set up Replicate
             os.environ['REPLICATE_API_TOKEN'] = replicate_api_key
             
-            # Use Flux for high-quality image generation
-            print("🎨 Flux로 이미지 생성 중...")
+            # Use Flux Dev for higher resolution support (Schnell only does 1024x1024)
+            print("🎨 Flux Dev로 이미지 생성 중...")
             output = replicate.run(
-                "black-forest-labs/flux-schnell",
+                "black-forest-labs/flux-dev",
                 input={
                     "prompt": prompt,
                     "width": width,
                     "height": height,
                     "num_outputs": 1,
                     "output_format": "png",
-                    "output_quality": 100
+                    "output_quality": 100,
+                    "guidance": 3.5,
+                    "num_inference_steps": 28
                 }
             )
             
@@ -86,10 +88,10 @@ class handler(BaseHTTPRequestHandler):
                     tmp_file.write(image_bytes)
                     tmp_filename = tmp_file.name
                 
-                # Remove background
+                # Remove background using 851-labs model (better quality)
                 with open(tmp_filename, 'rb') as image_file:
                     bg_output = replicate.run(
-                        "lucataco/remove-bg:95fcc2a26d3899cd6c2691c900465aaeff466285a65c14638cc5f36f34befaf1",
+                        "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
                         input={"image": image_file}
                     )
                 
