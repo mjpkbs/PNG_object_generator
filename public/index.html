@@ -850,6 +850,37 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                         <div className="panel">
                             <h2 className="panel-title">이미지 설정</h2>
                             
+                            {/* Object Name Input - MOVED TO TOP */}
+                            <div className="form-group">
+                                <label htmlFor="objectInput">🎯 오브젝트 이름 (한글/영어)</label>
+                                <input 
+                                    type="text" 
+                                    id="objectInput"
+                                    value={objectName}
+                                    onChange={(e) => setObjectName(e.target.value)}
+                                    placeholder="예: 커피잔, coffee mug, 노트북, laptop"
+                                />
+                            </div>
+
+                            {/* Generate Button - MOVED TO TOP */}
+                            <div className="form-group">
+                                <button 
+                                    className="btn-primary" 
+                                    onClick={handleGenerate}
+                                    disabled={loading || !objectName || !replicateApiKey}
+                                    style={{ width: '100%' }}
+                                >
+                                    {loading ? '생성 중...' : '🎨 이미지 생성'}
+                                </button>
+                            </div>
+
+                            <hr style={{
+                                border: 'none',
+                                borderTop: '1px solid rgba(0, 212, 255, 0.2)',
+                                margin: '24px 0'
+                            }} />
+                            
+                            {/* Camera Angle Controls */}
                             <div 
                                 ref={cubeRef} 
                                 className="cube-container"
@@ -967,28 +998,6 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                     • SDXL: 안정적인 고품질, 최대 1K<br/>
                                     • Recraft V3: 최신 모델, 리얼리스틱
                                 </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="objectInput">🎯 오브젝트 이름 (한글/영어)</label>
-                                <input 
-                                    type="text" 
-                                    id="objectInput"
-                                    value={objectName}
-                                    onChange={(e) => setObjectName(e.target.value)}
-                                    placeholder="예: 커피잔, coffee mug, 노트북, laptop"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <button 
-                                    className="btn-primary" 
-                                    onClick={handleGenerate}
-                                    disabled={loading || !objectName || !replicateApiKey}
-                                    style={{ width: '100%' }}
-                                >
-                                    {loading ? '생성 중...' : '🎨 이미지 생성'}
-                                </button>
                             </div>
 
                         </div>

@@ -16,21 +16,31 @@ class handler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         try:
+            print("="*50)
+            print("🔵 Request received")
+            
             # Read request body
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             body = json.loads(post_data.decode('utf-8'))
+            
+            print(f"📦 Request body keys: {list(body.keys())}")
             
             replicate_api_key = body.get('replicateApiKey')
             prompt = body.get('prompt')
             resolution = body.get('resolution', '1024x1024')
             model_choice = body.get('model', 'flux-pro')  # Default to FLUX Pro
             
+            print(f"🤖 Model: {model_choice}")
+            print(f"📐 Resolution: {resolution}")
+            
             if not replicate_api_key:
+                print("❌ No API key provided")
                 self.send_error(400, 'Replicate API 키가 필요합니다')
                 return
             
             if not prompt:
+                print("❌ No prompt provided")
                 self.send_error(400, '프롬프트가 필요합니다')
                 return
             
@@ -46,56 +56,64 @@ class handler(BaseHTTPRequestHandler):
             os.environ['REPLICATE_API_TOKEN'] = replicate_api_key
             
             # Generate image based on selected model
-            if model_choice == 'flux-pro':
-                print(f"🎨 FLUX.1 Pro로 {width}x{height} 이미지 생성 중...")
-                output = replicate.run(
-                    "black-forest-labs/flux-1.1-pro",
-                    input={
-                        "prompt": prompt,
-                        "width": width,
-                        "height": height,
-                        "output_format": "png",
-                        "output_quality": 100,
-                        "safety_tolerance": 2,
-                        "prompt_upsampling": True
-                    }
-                )
-            elif model_choice == 'flux-schnell':
-                print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
-                output = replicate.run(
-                    "black-forest-labs/flux-schnell",
-                    input={
-                        "prompt": prompt,
-                        "output_format": "png",
-                        "output_quality": 100,
-                        "aspect_ratio": "1:1"
-                    }
-                )
-            elif model_choice == 'sdxl':
-                print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
-                output = replicate.run(
-                    "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-                    input={
-                        "prompt": prompt,
-                        "width": width,
-                        "height": height,
-                        "num_outputs": 1,
-                        "output_format": "png",
-                        "output_quality": 100
-                    }
-                )
-            elif model_choice == 'recraft':
-                print(f"🎨 Recraft V3로 {width}x{height} 이미지 생성 중...")
-                output = replicate.run(
-                    "recraft-ai/recraft-v3",
-                    input={
-                        "prompt": prompt,
-                        "size": f"{width}x{height}",
-                        "style": "realistic_image"
-                    }
-                )
-            else:
-                self.send_error(400, f'지원하지 않는 모델: {model_choice}')
+            try:
+                if model_choice == 'flux-pro':
+                    print(f"🎨 FLUX.1 Pro로 {width}x{height} 이미지 생성 중...")
+                    output = replicate.run(
+                        "black-forest-labs/flux-1.1-pro",
+                        input={
+                            "prompt": prompt,
+                            "width": width,
+                            "height": height,
+                            "output_format": "png",
+                            "output_quality": 100,
+                            "safety_tolerance": 2,
+                            "prompt_upsampling": True
+                        }
+                    )
+                elif model_choice == 'flux-schnell':
+                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024 고정)...")
+                    output = replicate.run(
+                        "black-forest-labs/flux-schnell",
+                        input={
+                            "prompt": prompt,
+                            "output_format": "png",
+                            "output_quality": 100,
+                            "aspect_ratio": "1:1"
+                        }
+                    )
+                elif model_choice == 'sdxl':
+                    print(f"🎨 Stable Diffusion XL로 {width}x{height} 이미지 생성 중...")
+                    output = replicate.run(
+                        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+                        input={
+                            "prompt": prompt,
+                            "width": width,
+                            "height": height,
+                            "num_outputs": 1,
+                            "output_format": "png",
+                            "output_quality": 100
+                        }
+                    )
+                elif model_choice == 'recraft':
+                    print(f"🎨 Recraft V3로 {width}x{height} 이미지 생성 중...")
+                    output = replicate.run(
+                        "recraft-ai/recraft-v3",
+                        input={
+                            "prompt": prompt,
+                            "size": f"{width}x{height}",
+                            "style": "realistic_image"
+                        }
+                    )
+                else:
+                    print(f"❌ Unknown model: {model_choice}")
+                    self.send_error(400, f'지원하지 않는 모델: {model_choice}')
+                    return
+            except Exception as model_error:
+                print(f"❌ Model execution failed: {str(model_error)}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, f'모델 실행 실패: {str(model_error)}')
                 return
             
             print(f"📡 모델 출력: {output}")
