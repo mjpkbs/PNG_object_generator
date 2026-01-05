@@ -528,6 +528,7 @@
             const [rotationY, setRotationY] = useState(0.5);
             const [loading, setLoading] = useState(false);
             const [generatedImage, setGeneratedImage] = useState(null);
+            const [originalImage, setOriginalImage] = useState(null); // Image before BG removal
             const [hasTransparency, setHasTransparency] = useState(false);
             const [error, setError] = useState(null);
             const [warning, setWarning] = useState(null);
@@ -786,6 +787,7 @@
                 setError(null);
                 setWarning(null);
                 setGeneratedImage(null);
+                setOriginalImage(null); // Reset original image too
 
                 const cameraDesc = cameraAngleData.prompt;
                 
@@ -799,7 +801,7 @@ Camera: ${cameraDesc}.
 Background: ${backgroundDesc}.
 Lighting: ${lightingDesc}. The object should be lit with pure white light sources only, with natural accurate colors and white highlights. The background should NOT cast any colored light onto the object.
 Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures, accurate object colors without color contamination.
-Composition: Center the object in frame with proper composition and depth. The object should be clearly separated from the background with proper edge definition.
+Composition: IMPORTANT - The object should fill the frame as much as possible without being cropped. The object should be LARGE in the frame, occupying maximum space while remaining completely visible. Center the object with minimal empty space around it. The object should appear close to the camera for maximum size. Tight framing with the object taking up 70-80% of the image area.
 Quality: Sharp details, professional product photography quality, true-to-life colors.`;
 
                 try {
@@ -820,6 +822,7 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                         setError(data.error.message);
                     } else {
                         setGeneratedImage(`data:image/png;base64,${data.image}`);
+                        setOriginalImage(`data:image/png;base64,${data.originalImage}`); // Store original
                         setHasTransparency(data.hasTransparency);
                         setWarning(data.warning);
                     }
@@ -835,6 +838,14 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                 const link = document.createElement('a');
                 link.href = generatedImage;
                 link.download = `${objectName}-${cameraAngle}-${resolution}.png`;
+                link.click();
+            };
+
+            const downloadOriginalImage = () => {
+                if (!originalImage) return;
+                const link = document.createElement('a');
+                link.href = originalImage;
+                link.download = `${objectName}-${cameraAngle}-${resolution}-original.png`;
                 link.click();
             };
 
@@ -1092,8 +1103,17 @@ Quality: Sharp details, professional product photography quality, true-to-life c
                                             onClick={downloadImage}
                                             style={{ marginTop: '20px', width: '100%' }}
                                         >
-                                            💾 PNG 다운로드 ({resolution})
+                                            💾 투명 PNG 다운로드 ({resolution})
                                         </button>
+                                        {originalImage && (
+                                            <button 
+                                                className="btn-secondary" 
+                                                onClick={downloadOriginalImage}
+                                                style={{ marginTop: '12px', width: '100%', background: '#1a1f2e', border: '1px solid rgba(0, 212, 255, 0.3)' }}
+                                            >
+                                                📷 배경 포함 원본 다운로드 ({resolution})
+                                            </button>
+                                        )}
                                     </div>
                                 )}
 

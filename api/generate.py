@@ -91,13 +91,12 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN
+                        # Upscale with Real-ESRGAN (lucataco - faster!)
                         upscale_output = replicate.run(
-                            "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+                            "lucataco/real-esrgan:dda8245c8f02f0a0ac20646c874d96f041028b60a0329a0cf4241a01c8bc098e",
                             input={
-                                "image": image_url,  # Use URL instead of FileOutput
-                                "scale": scale,
-                                "face_enhance": False
+                                "image": image_url,
+                                "scale": scale
                             }
                         )
                         # Update output to upscaled result
@@ -145,13 +144,12 @@ class handler(BaseHTTPRequestHandler):
                         else:
                             scale = 4  # Max scale
                         
-                        # Upscale with Real-ESRGAN
+                        # Upscale with Real-ESRGAN (lucataco - faster!)
                         upscale_output = replicate.run(
-                            "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+                            "lucataco/real-esrgan:dda8245c8f02f0a0ac20646c874d96f041028b60a0329a0cf4241a01c8bc098e",
                             input={
                                 "image": image_url,
-                                "scale": scale,
-                                "face_enhance": False
+                                "scale": scale
                             }
                         )
                         # Update output to upscaled result
@@ -288,6 +286,7 @@ class handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'image': result_image_data,
+                    'originalImage': generated_image_data,  # Original image before BG removal
                     'hasTransparency': has_transparency,
                     'warning': None,
                     'resolution': f"{actual_size[0]}x{actual_size[1]}"
