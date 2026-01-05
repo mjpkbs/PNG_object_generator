@@ -628,7 +628,12 @@
                 
                 // Normalize angles to 0-360
                 const normalizedX = ((xDeg % 360) + 360) % 360;
-                const normalizedY = ((yDeg % 360) + 360) % 360;
+                let normalizedY = ((yDeg % 360) + 360) % 360;
+                
+                // CRITICAL FIX: Invert Y rotation to match cube visibility
+                // When cube shows RIGHT side (Y=29°), we need to generate showing RIGHT side
+                // Standard Three.js +Y rotation shows left, so we invert
+                normalizedY = (360 - normalizedY) % 360;
                 
                 // Helper function to check if angle is within range
                 const inRange = (angle, target, tolerance = 25) => {
@@ -637,70 +642,64 @@
                            Math.abs(angle - target - 360) < tolerance;
                 };
                 
-                // FRONT VIEW - Looking straight at front (Y=0, X near 0)
+                // FRONT VIEW
                 if (inRange(normalizedX, 0, 15) && inRange(normalizedY, 0, 15)) 
-                    return { display: "정면 (Front)", prompt: "direct front view, straight on, eye level, facing camera" };
+                    return { display: "정면 (Front)", prompt: "front view of object, object facing directly toward camera, centered composition" };
                 
-                // RIGHT SIDE VIEW - 90 degrees right (Y=90, X near 0)
+                // RIGHT SIDE VIEW - Object's right side facing camera
                 if (inRange(normalizedX, 0, 15) && inRange(normalizedY, 90, 15)) 
-                    return { display: "우측면 (Right)", prompt: "perfect right side view, 90 degree profile, orthographic side angle" };
+                    return { display: "우측면 (Right)", prompt: "right side view of object, showing the object's right side, 90 degree side profile" };
                 
-                // BACK VIEW - Looking at back (Y=180, X near 0)
+                // BACK VIEW
                 if (inRange(normalizedX, 0, 15) && (inRange(normalizedY, 180, 15) || inRange(normalizedY, -180, 15))) 
-                    return { display: "후면 (Back)", prompt: "back view, rear angle, looking at the back side" };
+                    return { display: "후면 (Back)", prompt: "back view of object, object's rear side facing camera" };
                 
-                // LEFT SIDE VIEW - 90 degrees left (Y=270 or -90, X near 0)
+                // LEFT SIDE VIEW
                 if (inRange(normalizedX, 0, 15) && (inRange(normalizedY, 270, 15) || inRange(normalizedY, -90, 15))) 
-                    return { display: "좌측면 (Left)", prompt: "perfect left side view, 90 degree profile, orthographic side angle" };
+                    return { display: "좌측면 (Left)", prompt: "left side view of object, showing the object's left side, 90 degree side profile" };
                 
-                // TOP VIEW - Bird's eye (X=90)
+                // TOP VIEW
                 if (inRange(normalizedX, 90, 15)) 
-                    return { display: "상단 (Top)", prompt: "top-down view, bird's eye view, looking directly down from above, flat lay angle" };
+                    return { display: "상단 (Top)", prompt: "top view of object, bird's eye perspective looking down at the object from directly above" };
                 
-                // BOTTOM VIEW - Looking up (X=270 or -90)
+                // BOTTOM VIEW
                 if (inRange(normalizedX, 270, 15) || inRange(normalizedX, -90, 15)) 
-                    return { display: "하단 (Bottom)", prompt: "bottom view, worm's eye view, looking up from below" };
+                    return { display: "하단 (Bottom)", prompt: "bottom view of object, looking up at the underside of the object" };
                 
-                // THREE-QUARTER VIEWS (Most popular for product renders!)
+                // THREE-QUARTER VIEWS
                 
-                // Front-Right 3/4 (X=30-45, Y=30-60) - Most common product angle
-                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 20 && normalizedY < 70) 
-                    return { display: "우상단 3/4 (Front-Right 3/4)", prompt: "three-quarter view from front-right, camera elevated 35 degrees, rotated 45 degrees clockwise, classic product photography angle" };
+                // Front-Right 3/4 - Shows front and right sides (Y around 20-70 after inversion = original -20 to -70)
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 290 && normalizedY < 350) 
+                    return { display: "우상단 3/4 (Front-Right 3/4)", prompt: "three-quarter angle showing both the front and right side of the object, object rotated to prominently display its right side along with the front, elevated camera angle" };
                 
-                // Front-Left 3/4 (X=30-45, Y=300-330 or -60 to -30)
-                if (normalizedX > 20 && normalizedX < 60 && (normalizedY > 290 || normalizedY < 340)) 
-                    return { display: "좌상단 3/4 (Front-Left 3/4)", prompt: "three-quarter view from front-left, camera elevated 35 degrees, rotated 45 degrees counter-clockwise" };
+                // Front-Left 3/4 - Shows front and left sides  
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 10 && normalizedY < 70) 
+                    return { display: "좌상단 3/4 (Front-Left 3/4)", prompt: "three-quarter angle showing both the front and left side of the object, object rotated to prominently display its left side along with the front, elevated camera angle" };
                 
-                // Back-Right 3/4 (X=30-45, Y=120-150)
-                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 110 && normalizedY < 160) 
-                    return { display: "후우측 3/4 (Back-Right 3/4)", prompt: "three-quarter view from back-right, elevated angle, showing rear and right side" };
-                
-                // Back-Left 3/4 (X=30-45, Y=210-240)
+                // Back-Right 3/4
                 if (normalizedX > 20 && normalizedX < 60 && normalizedY > 200 && normalizedY < 250) 
-                    return { display: "후좌측 3/4 (Back-Left 3/4)", prompt: "three-quarter view from back-left, elevated angle, showing rear and left side" };
+                    return { display: "후우측 3/4 (Back-Right 3/4)", prompt: "three-quarter rear angle showing the back and right side of the object" };
                 
-                // ISOMETRIC VIEWS (35.264 degrees for true isometric)
+                // Back-Left 3/4
+                if (normalizedX > 20 && normalizedX < 60 && normalizedY > 110 && normalizedY < 160) 
+                    return { display: "후좌측 3/4 (Back-Left 3/4)", prompt: "three-quarter rear angle showing the back and left side of the object" };
+                
+                // ISOMETRIC VIEWS
                 
                 // Isometric Front-Right
-                if (normalizedX > 30 && normalizedX < 50 && normalizedY > 35 && normalizedY < 55)
-                    return { display: "아이소메트릭 우전 (Iso Front-Right)", prompt: "isometric view from front-right, true isometric angle at 35.264 degrees, technical drawing style" };
+                if (normalizedX > 30 && normalizedX < 50 && normalizedY > 305 && normalizedY < 345)
+                    return { display: "아이소메트릭 우전 (Iso Front-Right)", prompt: "isometric view showing front and right side of object at 35 degree angle, technical drawing perspective" };
                 
                 // Isometric Front-Left
-                if (normalizedX > 30 && normalizedX < 50 && (normalizedY > 305 || normalizedY < 325))
-                    return { display: "아이소메트릭 좌전 (Iso Front-Left)", prompt: "isometric view from front-left, true isometric angle at 35.264 degrees, technical drawing style" };
+                if (normalizedX > 30 && normalizedX < 50 && normalizedY > 15 && normalizedY < 55)
+                    return { display: "아이소메트릭 좌전 (Iso Front-Left)", prompt: "isometric view showing front and left side of object at 35 degree angle, technical drawing perspective" };
                 
-                // HIGH ANGLE (looking down, X > 60)
+                // HIGH ANGLE views
                 if (normalizedX > 60 && normalizedX < 90) {
-                    if (normalizedY < 45) return { display: "고각도 정면 (High Front)", prompt: "high angle view from front, camera looking down at 60-70 degrees, elevated perspective" };
-                    if (normalizedY > 45 && normalizedY < 135) return { display: "고각도 우측 (High Right)", prompt: "high angle view from right side, camera looking down at 60-70 degrees" };
-                    if (normalizedY > 135 && normalizedY < 225) return { display: "고각도 후면 (High Back)", prompt: "high angle view from back, camera looking down at 60-70 degrees" };
-                    return { display: "고각도 좌측 (High Left)", prompt: "high angle view from left side, camera looking down at 60-70 degrees" };
-                }
-                
-                // LOW ANGLE (looking up, X < 0 or X > 270)
-                if ((normalizedX > 270 && normalizedX < 360) || (normalizedX > 0 && normalizedX < 20)) {
-                    // Actually low angle would be negative X or X close to 360
-                    // But let's handle the transition zone
+                    if (normalizedY < 45 || normalizedY > 315) return { display: "고각도 정면 (High Front)", prompt: "high angle view from above showing mostly the front of the object, camera elevated 60-70 degrees" };
+                    if (normalizedY > 45 && normalizedY < 135) return { display: "고각도 좌측 (High Left)", prompt: "high angle view showing the object's left side from above, camera elevated 60-70 degrees" };
+                    if (normalizedY > 135 && normalizedY < 225) return { display: "고각도 후면 (High Back)", prompt: "high angle view showing the object's back from above, camera elevated 60-70 degrees" };
+                    return { display: "고각도 우측 (High Right)", prompt: "high angle view showing the object's right side from above, camera elevated 60-70 degrees" };
                 }
                 
                 // GENERAL ANGLED VIEW (fallback)
@@ -708,18 +707,19 @@
                                      normalizedX < 45 ? "slightly elevated" :
                                      normalizedX < 75 ? "elevated angle" : "high angle";
                                      
-                const rotationDesc = normalizedY < 30 ? "facing mostly forward" :
-                                    normalizedY < 80 ? "rotated toward right" :
-                                    normalizedY < 100 ? "showing right side" :
-                                    normalizedY < 170 ? "rotated toward back" :
-                                    normalizedY < 190 ? "facing back" :
-                                    normalizedY < 260 ? "rotated toward left" :
-                                    normalizedY < 280 ? "showing left side" :
-                                    normalizedY < 330 ? "rotated toward front-left" : "facing mostly forward";
+                // After inversion: low normalizedY = right side, high = left side
+                const sideDesc = normalizedY < 30 || normalizedY > 330 ? "front of object facing camera" :
+                                normalizedY > 300 && normalizedY <= 330 ? "front and right side of object visible" :
+                                normalizedY > 260 && normalizedY <= 300 ? "right side of object prominently visible" :
+                                normalizedY > 190 && normalizedY <= 260 ? "right side and back of object visible" :
+                                normalizedY > 170 && normalizedY <= 190 ? "back of object facing camera" :
+                                normalizedY > 100 && normalizedY <= 170 ? "back and left side of object visible" :
+                                normalizedY > 80 && normalizedY <= 100 ? "left side of object prominently visible" :
+                                normalizedY > 30 && normalizedY <= 80 ? "left side and front of object visible" : "front of object facing camera";
                 
                 return { 
                     display: `각진 뷰 (${elevationDesc})`, 
-                    prompt: `${elevationDesc} perspective, ${rotationDesc}, professional product photography composition` 
+                    prompt: `${elevationDesc} view with ${sideDesc}, professional product photography` 
                 };
             };
 
