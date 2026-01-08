@@ -30,9 +30,13 @@ class handler(BaseHTTPRequestHandler):
             prompt = body.get('prompt')
             resolution = body.get('resolution', '1024x1024')
             model_choice = body.get('model', 'flux-schnell')  # Default to FLUX Schnell
+            reference_image = body.get('referenceImage')  # Optional reference image (base64)
             
             print(f"🤖 Model: {model_choice}")
             print(f"📐 Resolution: {resolution}")
+            if reference_image:
+                print(f"📷 Reference image provided: {len(reference_image)} characters")
+            
             
             if not replicate_api_key:
                 print("❌ No API key provided")
@@ -58,16 +62,32 @@ class handler(BaseHTTPRequestHandler):
             # Generate image based on selected model
             try:
                 if model_choice == 'flux-schnell':
-                    print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024)...")
-                    output = replicate.run(
-                        "black-forest-labs/flux-schnell",
-                        input={
-                            "prompt": prompt,
-                            "output_format": "png",
-                            "output_quality": 100,
-                            "aspect_ratio": "1:1"
-                        }
-                    )
+                    # Use img2img if reference image provided
+                    if reference_image:
+                        print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중...")
+                        output = replicate.run(
+                            "black-forest-labs/flux-dev",
+                            input={
+                                "prompt": prompt,
+                                "image": reference_image,  # Base64 reference image
+                                "prompt_strength": 0.8,  # How much to follow the prompt vs image
+                                "output_format": "png",
+                                "output_quality": 100,
+                                "aspect_ratio": "1:1"
+                            }
+                        )
+                    else:
+                        print(f"🎨 FLUX Schnell로 이미지 생성 중 (1024x1024)...")
+                        output = replicate.run(
+                            "black-forest-labs/flux-schnell",
+                            input={
+                                "prompt": prompt,
+                                "output_format": "png",
+                                "output_quality": 100,
+                                "aspect_ratio": "1:1"
+                            }
+                        )
+                    
                     
                     # Extract URL from FileOutput (handle list or single object)
                     if isinstance(output, list):
@@ -118,15 +138,31 @@ class handler(BaseHTTPRequestHandler):
                         output = image_url
                     
                 elif model_choice == 'nano-banana':
-                    print(f"🎨 Google Nano Banana로 이미지 생성 중 (1024x1024)...")
-                    output = replicate.run(
-                        "google/nano-banana",
-                        input={
-                            "prompt": prompt,
-                            "aspect_ratio": "1:1",
-                            "output_format": "png"
-                        }
-                    )
+                    # Use img2img if reference image provided (fallback to FLUX dev)
+                    if reference_image:
+                        print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중 (Nano Banana 대체)...")
+                        output = replicate.run(
+                            "black-forest-labs/flux-dev",
+                            input={
+                                "prompt": prompt,
+                                "image": reference_image,  # Base64 reference image
+                                "prompt_strength": 0.8,
+                                "output_format": "png",
+                                "output_quality": 100,
+                                "aspect_ratio": "1:1"
+                            }
+                        )
+                    else:
+                        print(f"🎨 Google Nano Banana로 이미지 생성 중 (1024x1024)...")
+                        output = replicate.run(
+                            "google/nano-banana",
+                            input={
+                                "prompt": prompt,
+                                "aspect_ratio": "1:1",
+                                "output_format": "png"
+                            }
+                        )
+                    
                     
                     # Extract URL from output (handle list or single object)
                     if isinstance(output, list):
@@ -177,18 +213,32 @@ class handler(BaseHTTPRequestHandler):
                         output = image_url
                     
                 elif model_choice == 'flux-pro-ultra':
-                    print(f"🎨 FLUX 1.1 Pro Ultra로 {width}x{height} 이미지 생성 중...")
-                    # FLUX Pro Ultra supports up to 4MP (2048x2048+)
-                    output = replicate.run(
-                        "black-forest-labs/flux-1.1-pro-ultra",
-                        input={
-                            "prompt": prompt,
-                            "aspect_ratio": "1:1",
-                            "output_format": "png",
-                            "output_quality": "ultra",  # ultra for highest quality
-                            "safety_tolerance": 2
-                        }
-                    )
+                    # Use img2img if reference image provided
+                    if reference_image:
+                        print(f"🎨 FLUX 1.1 Pro (img2img)로 참조 이미지 기반 생성 중...")
+                        output = replicate.run(
+                            "black-forest-labs/flux-1.1-pro",
+                            input={
+                                "prompt": prompt,
+                                "image": reference_image,  # Base64 reference image
+                                "prompt_strength": 0.8,
+                                "aspect_ratio": "1:1",
+                                "output_format": "png"
+                            }
+                        )
+                    else:
+                        print(f"🎨 FLUX 1.1 Pro Ultra로 {width}x{height} 이미지 생성 중...")
+                        # FLUX Pro Ultra supports up to 4MP (2048x2048+)
+                        output = replicate.run(
+                            "black-forest-labs/flux-1.1-pro-ultra",
+                            input={
+                                "prompt": prompt,
+                                "aspect_ratio": "1:1",
+                                "output_format": "png",
+                                "output_quality": "ultra",  # ultra for highest quality
+                                "safety_tolerance": 2
+                            }
+                        )
                 else:
                     print(f"❌ Unknown model: {model_choice}")
                     # Send JSON error instead of HTTP error
