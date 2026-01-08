@@ -65,12 +65,26 @@ class handler(BaseHTTPRequestHandler):
                     # Use img2img if reference image provided
                     if reference_image:
                         print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중...")
+                        
+                        # Modify prompt for photorealism when using reference
+                        # Remove "Professional 3D render" and replace with photorealistic terms
+                        photorealistic_prompt = prompt.replace(
+                            "Professional 3D render of a", 
+                            "Photorealistic image of a"
+                        ).replace(
+                            "3D render",
+                            "photograph"
+                        ).replace(
+                            "Ultra-realistic 3D product render",
+                            "Professional product photography"
+                        )
+                        
                         output = replicate.run(
                             "black-forest-labs/flux-dev",
                             input={
-                                "prompt": prompt,
+                                "prompt": photorealistic_prompt,
                                 "image": reference_image,  # Base64 reference image
-                                "prompt_strength": 0.8,  # How much to follow the prompt vs image
+                                "prompt_strength": 0.4,  # Lower = follow reference style more (40% prompt, 60% reference)
                                 "output_format": "png",
                                 "output_quality": 100,
                                 "aspect_ratio": "1:1"
@@ -141,12 +155,25 @@ class handler(BaseHTTPRequestHandler):
                     # Use img2img if reference image provided (fallback to FLUX dev)
                     if reference_image:
                         print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중 (Nano Banana 대체)...")
+                        
+                        # Modify prompt for photorealism when using reference
+                        photorealistic_prompt = prompt.replace(
+                            "Professional 3D render of a", 
+                            "Photorealistic image of a"
+                        ).replace(
+                            "3D render",
+                            "photograph"
+                        ).replace(
+                            "Ultra-realistic 3D product render",
+                            "Professional product photography"
+                        )
+                        
                         output = replicate.run(
                             "black-forest-labs/flux-dev",
                             input={
-                                "prompt": prompt,
+                                "prompt": photorealistic_prompt,
                                 "image": reference_image,  # Base64 reference image
-                                "prompt_strength": 0.8,
+                                "prompt_strength": 0.4,  # Lower = follow reference style more
                                 "output_format": "png",
                                 "output_quality": 100,
                                 "aspect_ratio": "1:1"
@@ -216,12 +243,25 @@ class handler(BaseHTTPRequestHandler):
                     # Use img2img if reference image provided
                     if reference_image:
                         print(f"🎨 FLUX 1.1 Pro (img2img)로 참조 이미지 기반 생성 중...")
+                        
+                        # Modify prompt for photorealism when using reference
+                        photorealistic_prompt = prompt.replace(
+                            "Professional 3D render of a", 
+                            "Photorealistic image of a"
+                        ).replace(
+                            "3D render",
+                            "photograph"
+                        ).replace(
+                            "Ultra-realistic 3D product render",
+                            "Professional product photography"
+                        )
+                        
                         output = replicate.run(
                             "black-forest-labs/flux-1.1-pro",
                             input={
-                                "prompt": prompt,
+                                "prompt": photorealistic_prompt,
                                 "image": reference_image,  # Base64 reference image
-                                "prompt_strength": 0.8,
+                                "prompt_strength": 0.4,  # Lower = follow reference style more
                                 "aspect_ratio": "1:1",
                                 "output_format": "png"
                             }
