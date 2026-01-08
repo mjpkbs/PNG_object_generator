@@ -658,6 +658,12 @@
                 // Standard Three.js +Y rotation shows left, so we invert
                 normalizedY = (360 - normalizedY) % 360;
                 
+                // Helper function to check if angle is within range
+                const inRange = (angle, target, tolerance = 25) => {
+                    return Math.abs(angle - target) <= tolerance || 
+                           Math.abs(angle - target + 360) <= tolerance ||
+                           Math.abs(angle - target - 360) <= tolerance;
+                };
 
                 
                 // CARDINAL VIEWS (Front, Right, Back, Left, Top, Bottom) - 5 degree tolerance
