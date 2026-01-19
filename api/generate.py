@@ -67,17 +67,18 @@ class handler(BaseHTTPRequestHandler):
                         print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중...")
                         
                         # Modify prompt for photorealism when using reference
-                        # Remove "Professional 3D render" and replace with photorealistic terms
+                        # Maintain 3D rendering quality while adapting for img2img
                         photorealistic_prompt = prompt.replace(
-                            "Professional 3D render of a", 
-                            "Photorealistic image of a"
+                            "Ultra-realistic photorealistic 3D product render", 
+                            "Photorealistic 3D product render"
                         ).replace(
-                            "3D render",
-                            "photograph"
+                            "Professional 3D render",
+                            "Photorealistic 3D render"
                         ).replace(
-                            "Ultra-realistic 3D product render",
-                            "Professional product photography"
+                            "PixelSquid-style 3D object illustration",
+                            "professional 3D object render"
                         )
+                        # Keep the 3D rendering terminology for consistency
                         
                         output = replicate.run(
                             "black-forest-labs/flux-dev",
@@ -157,16 +158,18 @@ class handler(BaseHTTPRequestHandler):
                         print(f"🎨 FLUX Dev (img2img)로 참조 이미지 기반 생성 중 (Nano Banana 대체)...")
                         
                         # Modify prompt for photorealism when using reference
+                        # Maintain 3D rendering quality while adapting for img2img
                         photorealistic_prompt = prompt.replace(
-                            "Professional 3D render of a", 
-                            "Photorealistic image of a"
+                            "Ultra-realistic photorealistic 3D product render", 
+                            "Photorealistic 3D product render"
                         ).replace(
-                            "3D render",
-                            "photograph"
+                            "Professional 3D render",
+                            "Photorealistic 3D render"
                         ).replace(
-                            "Ultra-realistic 3D product render",
-                            "Professional product photography"
+                            "PixelSquid-style 3D object illustration",
+                            "professional 3D object render"
                         )
+                        # Keep the 3D rendering terminology for consistency
                         
                         output = replicate.run(
                             "black-forest-labs/flux-dev",
@@ -245,16 +248,18 @@ class handler(BaseHTTPRequestHandler):
                         print(f"🎨 FLUX 1.1 Pro (img2img)로 참조 이미지 기반 생성 중...")
                         
                         # Modify prompt for photorealism when using reference
+                        # Maintain 3D rendering quality while adapting for img2img
                         photorealistic_prompt = prompt.replace(
-                            "Professional 3D render of a", 
-                            "Photorealistic image of a"
+                            "Ultra-realistic photorealistic 3D product render", 
+                            "Photorealistic 3D product render"
                         ).replace(
-                            "3D render",
-                            "photograph"
+                            "Professional 3D render",
+                            "Photorealistic 3D render"
                         ).replace(
-                            "Ultra-realistic 3D product render",
-                            "Professional product photography"
+                            "PixelSquid-style 3D object illustration",
+                            "professional 3D object render"
                         )
+                        # Keep the 3D rendering terminology for consistency
                         
                         output = replicate.run(
                             "black-forest-labs/flux-1.1-pro",

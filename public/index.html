@@ -873,18 +873,38 @@
 
                 const cameraDesc = cameraAngleData.prompt;
                 
-                // Use light gray background instead of blue to avoid color spill on objects
-                // Gray provides enough contrast for BG removal without affecting object colors
-                const backgroundDesc = "light gray background (#E5E5E5), clean neutral studio background, no shadows";
-                const lightingDesc = "professional white studio lighting, neutral white light, soft white reflections on object, pure white key light and fill light, no colored lighting";
+                // Detect if object name contains Korean characters and add English translation context
+                const hasKorean = /[\u3131-\uD79D]/.test(objectName);
+                let objectDesc = objectName;
+                if (hasKorean) {
+                    // For Korean names, add clarifying description in English to help AI understand
+                    objectDesc = `${objectName} (translate this Korean word to English and render that object)`;
+                }
+                
+                // Detect if object is likely white/light colored based on name
+                const isLikelyWhite = /white|white|흰|하얀|백색|화이트/i.test(objectName);
+                
+                // Dynamic background selection based on object color
+                let backgroundDesc;
+                if (isLikelyWhite) {
+                    // Use checkerboard or light gray with subtle pattern for white objects
+                    backgroundDesc = "light gray checkerboard pattern background, subtle alternating squares of #E8E8E8 and #D5D5D5, clean neutral studio background with pattern for transparent background separation, no shadows on background";
+                } else {
+                    // Standard white background for colored objects
+                    backgroundDesc = "pure white background (#FFFFFF), clean neutral studio background, no shadows";
+                }
+                
+                const lightingDesc = "professional studio lighting with three-point lighting setup, soft key light from 45 degrees, subtle fill light to reduce shadows, gentle rim light for depth, pure neutral white light sources (5500K color temperature), no colored lighting, subtle soft shadows underneath object for realism";
 
-                const prompt = `Professional 3D render of a ${objectName}. 
+                // Enhanced prompt for Shutterstock-style 3D object rendering
+                const prompt = `Ultra-realistic photorealistic 3D product render of a ${objectDesc}, professional PixelSquid-style 3D object illustration. 
 Camera: ${cameraDesc}.
 Background: ${backgroundDesc}.
-Lighting: ${lightingDesc}. The object should be lit with pure white light sources only, with natural accurate colors and white highlights. The background should NOT cast any colored light onto the object.
-Style: Ultra-realistic 3D product render with clean professional studio lighting, high detail and quality, photorealistic materials and textures, accurate object colors without color contamination.
-Composition: IMPORTANT - The object should fill the frame as much as possible without being cropped. The object should be LARGE in the frame, occupying maximum space while remaining completely visible. Center the object with minimal empty space around it. The object should appear close to the camera for maximum size. Tight framing with the object taking up 70-80% of the image area.
-Quality: Sharp details, professional product photography quality, true-to-life colors.`;
+Lighting: ${lightingDesc}. Create natural highlights and subtle reflections on surfaces with proper physically-based rendering (PBR) materials.
+Style: High-end 3D product visualization matching Shutterstock 3D object quality - photorealistic materials with accurate surface properties (metallic, roughness, specular), meticulous attention to texture detail, professional studio rendering quality, clean and polished appearance with subtle ambient occlusion for depth.
+Materials: Render with physically accurate materials - proper reflection, refraction where appropriate, micro-surface detail, realistic material response to lighting. Objects should look tangible and real with proper weight and substance.
+Composition: CRITICAL - The object must fill 70-80% of the frame without being cropped. Center the object perfectly with balanced spacing. The object should be the clear focal point, appearing close enough to show detail but with complete visibility of all edges. Professional product photography framing with the object prominent and commanding attention.
+Quality: Razor-sharp details throughout, professional commercial 3D rendering quality, true-to-life accurate colors and materials, clean edges, no artifacts or noise, publication-ready quality matching premium stock 3D asset standards.`;
 
                 try {
                     const response = await fetch('/api/generate', {
